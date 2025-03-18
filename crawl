@@ -1,0 +1,21 @@
+#!/bin/zsh
+
+PROJECT_NAME="simple-web-crawler"
+JAR_FILE="target/${PROJECT_NAME}-1.0-SNAPSHOT.jar"
+MAIN_CLASS="com.example.SimpleWebCrawler"
+
+# Check if Maven build is needed
+if [[ ! -f "$JAR_FILE" ]]; then
+    echo "🔨 Building project with Maven..."
+    mvn clean package || { echo "❌ Build failed!"; exit 1; }
+fi
+
+# Ensure an argument is provided
+if [[ $# -ne 1 ]]; then
+    echo "Usage: ./crawl.sh <start-url>"
+    exit 1
+fi
+
+# Run the Java application
+echo "🚀 Running web crawler on $1"
+java -cp "$JAR_FILE" "$MAIN_CLASS" "$1"
