@@ -1,5 +1,6 @@
 package com.conorsheppard;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -11,6 +12,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
+@Slf4j
 public class SimpleWebCrawler {
     private final Set<String> visitedUrls = new HashSet<>();
     private final Queue<String> queue = new LinkedList<>();
@@ -21,6 +23,14 @@ public class SimpleWebCrawler {
         queue.add(startUrl);
     }
 
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            log.info("Usage: SimpleWebCrawler <start-url>");
+            return;
+        }
+        new SimpleWebCrawler(args[0]).crawl();
+    }
+
     public void crawl() {
         while (!queue.isEmpty()) {
             String url = queue.poll();
@@ -28,7 +38,7 @@ public class SimpleWebCrawler {
                 continue;
             }
             visitedUrls.add(url);
-            System.out.println("Visiting: " + url);
+            log.info("Visiting: {}", url);
 
             try {
                 Document doc = Jsoup.connect(url).get();
@@ -37,12 +47,12 @@ public class SimpleWebCrawler {
                 for (Element link : links) {
                     String nextUrl = link.absUrl("href");
                     if (isValidUrl(nextUrl)) {
-                        System.out.println("  Found: " + nextUrl);
+                        log.info("  Found: {}", nextUrl);
                         queue.add(nextUrl);
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Failed to crawl: " + url);
+                log.error("Failed to crawl: {}", url);
             }
         }
     }
@@ -57,13 +67,5 @@ public class SimpleWebCrawler {
         } catch (Exception e) {
             return "";
         }
-    }
-
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            System.out.println("Usage: SimpleWebCrawler <start-url>");
-            return;
-        }
-        new SimpleWebCrawler(args[0]).crawl();
     }
 }
