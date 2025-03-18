@@ -1,12 +1,12 @@
 #!/bin/zsh
 
-PROJECT_NAME="simple-web-crawler"
+PROJECT_NAME="simple-web-crawler-java"
 JAR_FILE="target/${PROJECT_NAME}-1.0-SNAPSHOT.jar"
 MAIN_CLASS="com.example.SimpleWebCrawler"
 
 # Check if Maven build is needed
 if [[ ! -f "$JAR_FILE" ]]; then
-    echo "🔨 Building project with Maven..."
+    echo "Building project with Maven..."
     mvn clean package || { echo "❌ Build failed!"; exit 1; }
 fi
 
