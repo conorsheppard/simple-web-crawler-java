@@ -50,6 +50,9 @@ class SimpleWebCrawlerTest {
         assertEquals("https://monzo.com/supporting-customers",
                 normalizeUrl("https://monzo.com/supporting-customers/"));
 
+        assertEquals("https://monzo.com/supporting-customers",
+                normalizeUrl("https://monzo.com/supporting-Customers/"));
+
         // Ensure different paths are not mistakenly treated as the same
         assertNotEquals("https://monzo.com/supporting-customers",
                 normalizeUrl("https://monzo.com/another-path"));

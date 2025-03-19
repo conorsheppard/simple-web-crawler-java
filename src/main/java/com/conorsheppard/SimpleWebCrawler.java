@@ -21,6 +21,7 @@ public class SimpleWebCrawler {
     private final ExecutorService executor = Executors.newFixedThreadPool(15);
     private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    // Makes sure no duplicate URLs are enqueued
     private final Set<String> urlCache = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final String baseDomain;
 
@@ -97,6 +98,6 @@ public class SimpleWebCrawler {
     public static String normalizeUrl(String url) {
         URI uri = new URI(url);
         String normalized = uri.getScheme() + "://" + uri.getHost() + uri.getPath();
-        return normalized.replaceAll("/+$", "");
+        return normalized.toLowerCase().replaceAll("/+$", "");
     }
 }
