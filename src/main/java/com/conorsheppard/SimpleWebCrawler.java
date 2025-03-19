@@ -16,7 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Data
 public class SimpleWebCrawler {
-    private final ExecutorService executor = Executors.newFixedThreadPool(50);
+    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+//    private final ExecutorService executor = Executors.newFixedThreadPool(50);
     private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<String> urlCache = Collections.newSetFromMap(new ConcurrentHashMap<>());
