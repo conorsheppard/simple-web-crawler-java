@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Data
 public class SimpleWebCrawler {
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService executor = Executors.newFixedThreadPool(50);
     private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<String> urlCache = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -38,13 +38,12 @@ public class SimpleWebCrawler {
 
     private void startCrawling() {
         while (!urlQueue.isEmpty() || countDownLock.get() > 0) {
-            String url = urlQueue.poll();
-            countDownLock.getAndIncrement();
             if (!urlQueue.isEmpty()) {
+                String url = urlQueue.poll();
+                countDownLock.getAndIncrement();
                 submitCrawl(url);
             }
         }
-
         shutdownAndAwait();
     }
 
@@ -80,7 +79,6 @@ public class SimpleWebCrawler {
     }
 
     private void enqueueUrl(String url) {
-        log.info("Enqueuing: {}", url);
         if (urlCache.add(url)) { // Ensures unique URLs are enqueued
             urlQueue.add(url);
             countDownLock.getAndIncrement();
@@ -109,6 +107,7 @@ public class SimpleWebCrawler {
     }
 
     private void shutdownAndAwait() {
+        log.info("Awaiting shutdown ...");
         executor.shutdown();
         try {
             while (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
@@ -120,6 +119,5 @@ public class SimpleWebCrawler {
         }
         log.info("Crawling complete.");
         log.info("total links processed: {}", urlCache.size());
-        urlCache.forEach(url -> log.info("from the cache: {}", url));
     }
 }
