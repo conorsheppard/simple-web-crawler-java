@@ -11,7 +11,7 @@ It starts from a given URL, visits each page on the **same domain**, and prints 
 
 ---
 
-## 📦 Build and Run
+## 📦 Build and Run 🏃🏻
 
 ```shell
 make build
