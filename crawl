@@ -2,7 +2,7 @@
 
 PROJECT_NAME="simple-web-crawler-java"
 JAR_FILE="target/${PROJECT_NAME}-1.0-SNAPSHOT.jar"
-MAIN_CLASS="com.example.SimpleWebCrawler"
+MAIN_CLASS="com.conorsheppard.SimpleWebCrawler"
 
 # Check if Maven build is needed
 if [[ ! -f "$JAR_FILE" ]]; then
@@ -18,4 +18,5 @@ fi
 
 # Run the Java application
 echo "🚀 Running web crawler on $1"
-java -cp "$JAR_FILE" "$MAIN_CLASS" "$1"
+#java -cp "$JAR_FILE" "$MAIN_CLASS" "$1"
+mvn exec:java -Dexec.mainClass="com.example.SimpleWebCrawler" -Dexec.args="$1"
