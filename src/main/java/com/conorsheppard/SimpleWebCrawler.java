@@ -9,17 +9,19 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.net.URI;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Slf4j
 @Data
 public class SimpleWebCrawler {
-    private final Set<String> visitedUrls = new HashSet<>();
-    private final Queue<String> queue = new LinkedList<>();
-    private final Set<String> processedURLs = new HashSet<>();
+    private final ExecutorService executor = Executors.newFixedThreadPool(15);
+    private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
+    private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<String> urlCache = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final String baseDomain;
 
     public SimpleWebCrawler(String startUrl) {
@@ -32,13 +34,19 @@ public class SimpleWebCrawler {
             log.info("Usage: SimpleWebCrawler <start-url>");
             return;
         }
-        new SimpleWebCrawler(args[0]).crawl();
+        new SimpleWebCrawler(args[0]).startCrawling();
     }
+
+    private void startCrawling() {
+        while (!urlQueue.isEmpty()) executor.submit(this::crawl);
+        executor.shutdown();
+    }
+
 
     public void crawl() {
         int totalScrapedCount = 0;
-        while (!queue.isEmpty()) {
-            String url = queue.poll();
+        while (!urlQueue.isEmpty()) {
+            String url = urlQueue.poll();
             visitedUrls.add(url);
             log.info("Visiting: {}", url);
 
@@ -51,7 +59,7 @@ public class SimpleWebCrawler {
                     String nextUrl = normalizeUrl(link.absUrl("href"));
                     if (isValidUrl(nextUrl)) {
                         log.info("  Found: {}", nextUrl);
-                        if (!visitedUrls.contains(nextUrl)) {
+                        if (!urlCache.contains(nextUrl)) {
                             enqueueUrl(nextUrl);
                         }
                     }
@@ -59,7 +67,7 @@ public class SimpleWebCrawler {
 
                 log.info("  Total links scraped: {}", totalScrapedCount);
                 log.info("  Total unique links processed: {}", visitedUrls.size());
-                log.info("  Current queue size: {}", queue.size());
+                log.info("  Current queue size: {}", urlQueue.size());
             } catch (Exception e) {
                 log.error("Failed to crawl: {}", url);
             }
@@ -67,14 +75,14 @@ public class SimpleWebCrawler {
     }
 
     private void enqueueUrl(String url) {
-        if (!processedURLs.contains(url)) {
-            queue.add(url);
-            processedURLs.add(url);
+        if (!urlCache.contains(url)) {
+            urlQueue.add(url);
+            urlCache.add(url);
         }
     }
 
     boolean isValidUrl(String url) {
-        return url.startsWith("http") && getDomain(url).equals(baseDomain) && !visitedUrls.contains(url);
+        return url.startsWith("http") && getDomain(url).equals(baseDomain) && !urlCache.contains(url);
     }
 
     String getDomain(String url) {
