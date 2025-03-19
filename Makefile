@@ -11,5 +11,8 @@ docker-build:
 docker-run:
 	docker run -it --rm simple-web-crawler-java http://quotes.toscrape.com
 
+run-jar:
+	java -jar simple-web-crawler-java.jar http://quotes.toscrape.com
+
 .SILENT:
 .PHONY: default run

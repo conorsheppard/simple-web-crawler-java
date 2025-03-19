@@ -2,7 +2,7 @@
 FROM eclipse-temurin:23-jdk AS builder
 WORKDIR /app
 COPY . .
-RUN ./mvnw clean package
+RUN ./mvnw clean package -q -DskipTests
 
 # Runtime stage with only JRE
 FROM eclipse-temurin:23-jre
