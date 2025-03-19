@@ -72,7 +72,6 @@ public class SimpleWebCrawler {
             }
 
             log.info("  visitedUrls size: {}", visitedUrls.size());
-            log.info("  urlQueue size: {}", urlQueue.size());
             log.info("  urlCache size: {}", urlCache.size());
         } catch (Exception e) {
             log.error("Failed to crawl: {}", url, e);
