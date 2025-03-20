@@ -1,5 +1,7 @@
 # Simple Web Crawler 🕷️
 
+<img src="./badges/jacoco.svg" style="display: flex;" alt="jacoco-test-coverage-badge">
+
 A simple command-line web crawler built in **Java** using **JSoup**.  
 It starts from a given URL, visits each page on the **same domain**, and prints all discovered links.
 
