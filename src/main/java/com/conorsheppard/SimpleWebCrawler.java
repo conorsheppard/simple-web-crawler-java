@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Data
 public class SimpleWebCrawler {
-//    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final ExecutorService executor = Executors.newFixedThreadPool(50);
     private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -31,15 +30,7 @@ public class SimpleWebCrawler {
         enqueueUrl(normalizeUrl(startUrl));
     }
 
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            log.info("Usage: SimpleWebCrawler <start-url>");
-            return;
-        }
-        new SimpleWebCrawler(args[0]).startCrawling();
-    }
-
-    private void startCrawling() {
+    public void crawl() {
         while (!urlQueue.isEmpty() || countDownLock.get() > 0) {
             if (!urlQueue.isEmpty()) {
                 String url = urlQueue.poll();
@@ -57,7 +48,7 @@ public class SimpleWebCrawler {
         });
     }
 
-    public void crawl(String url) {
+    private void crawl(String url) {
         if (!visitedUrls.add(url)) return;
 
         if (!isHtmlContent(url)) {
@@ -88,12 +79,12 @@ public class SimpleWebCrawler {
     private void enqueueUrl(String url) {
         if (urlCache.add(url)) { // Ensures unique URLs are enqueued
             urlQueue.add(url);
-            countDownLock.getAndIncrement();
-            submitCrawl(url);
+//            countDownLock.getAndIncrement();
+//            submitCrawl(url);
         }
     }
 
-    private boolean isHtmlContent(String url) {
+    boolean isHtmlContent(String url) {
         try {
             Connection.Response response = Jsoup.connect(url).method(Connection.Method.HEAD).execute();
             String contentType = response.contentType();
@@ -124,7 +115,7 @@ public class SimpleWebCrawler {
                 .replaceAll("/+$", "");
     }
 
-    private void shutdownAndAwait() {
+    void shutdownAndAwait() {
         log.info("Awaiting shutdown ...");
         executor.shutdown();
         try {

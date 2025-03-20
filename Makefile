@@ -2,8 +2,14 @@ SHELL := /bin/bash
 
 default: build
 
-build:
+clean:
+	mvn clean
+
+build: clean
 	mvn clean package
+
+install: clean
+	mvn install -U
 
 test:
 	mvn test
@@ -35,4 +41,4 @@ coverage-badge-gen:
 test-suite: test-coverage check-coverage coverage-badge-gen
 
 .SILENT:
-.PHONY: default build test build-native run-native docker-build docker-run run-jar test-coverage check-coverage coverage-badge-gen test-suite
+.PHONY: default clean build install test build-native run-native docker-build docker-run run-jar test-coverage check-coverage coverage-badge-gen test-suite
