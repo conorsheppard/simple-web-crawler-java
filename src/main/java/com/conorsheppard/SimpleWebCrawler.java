@@ -3,11 +3,13 @@ package com.conorsheppard;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.*;
@@ -16,8 +18,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Data
 public class SimpleWebCrawler {
-    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
-//    private final ExecutorService executor = Executors.newFixedThreadPool(50);
+//    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final ExecutorService executor = Executors.newFixedThreadPool(50);
     private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<String> urlCache = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -56,7 +58,12 @@ public class SimpleWebCrawler {
     }
 
     public void crawl(String url) {
-        if (!visitedUrls.add(url)) return; // Avoid reprocessing
+        if (!visitedUrls.add(url)) return;
+
+        if (!isHtmlContent(url)) {
+            log.info("Skipping non-HTML URL: {}", url);
+            return;
+        }
 
         log.info("Visiting: {}", url);
         try {
@@ -83,6 +90,17 @@ public class SimpleWebCrawler {
             urlQueue.add(url);
             countDownLock.getAndIncrement();
             submitCrawl(url);
+        }
+    }
+
+    private boolean isHtmlContent(String url) {
+        try {
+            Connection.Response response = Jsoup.connect(url).method(Connection.Method.HEAD).execute();
+            String contentType = response.contentType();
+            return contentType != null && contentType.startsWith("text/html");
+        } catch (IOException e) {
+            log.warn("HEAD request failed for: {}, {}", url, e.getMessage());
+            return false;
         }
     }
 
