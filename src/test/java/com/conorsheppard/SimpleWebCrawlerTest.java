@@ -120,7 +120,7 @@ class SimpleWebCrawlerTest {
         // Create a spy on the executor to verify shutdown is called
         ExecutorService executorSpy = spy(crawler.getExecutor());
 
-        // Use reflection to replace the executor field with our spy
+        // Use reflection to replace the executor field with the spy
         try {
             Field executorField = SimpleWebCrawler.class.getDeclaredField("executor");
             executorField.setAccessible(true);
