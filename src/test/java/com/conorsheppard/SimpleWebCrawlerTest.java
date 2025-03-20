@@ -112,6 +112,8 @@ class SimpleWebCrawlerTest {
 
         // Verify visited URL was not processed again
         // crawler is already seeded with https://example.com + this one (https://example.com/visited) == 2
+        assertTrue(crawler.getVisitedUrls().contains("https://example.com"));
+        assertTrue(crawler.getVisitedUrls().contains("https://example.com/visited"));
         assertEquals(2, crawler.getVisitedUrls().size());
     }
 
