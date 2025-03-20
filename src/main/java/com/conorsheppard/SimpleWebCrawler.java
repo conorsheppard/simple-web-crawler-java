@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Data
 public class SimpleWebCrawler {
-//    private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
     private final ExecutorService executor = Executors.newFixedThreadPool(50);
     private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -85,7 +84,7 @@ public class SimpleWebCrawler {
         }
     }
 
-    private void enqueueUrl(String url) {
+    void enqueueUrl(String url) {
         if (urlCache.add(url)) { // Ensures unique URLs are enqueued
             urlQueue.add(url);
             countDownLock.getAndIncrement();
@@ -93,7 +92,7 @@ public class SimpleWebCrawler {
         }
     }
 
-    private boolean isHtmlContent(String url) {
+    boolean isHtmlContent(String url) {
         try {
             Connection.Response response = Jsoup.connect(url).method(Connection.Method.HEAD).execute();
             String contentType = response.contentType();
@@ -124,7 +123,7 @@ public class SimpleWebCrawler {
                 .replaceAll("/+$", "");
     }
 
-    private void shutdownAndAwait() {
+    void shutdownAndAwait() {
         log.info("Awaiting shutdown ...");
         executor.shutdown();
         try {

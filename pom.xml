@@ -56,6 +56,12 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.16.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>5.7.0</version>
             <scope>test</scope>
@@ -184,7 +190,12 @@
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.1</minimum>
+                                            <minimum>0.66</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
