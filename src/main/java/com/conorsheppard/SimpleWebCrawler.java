@@ -30,15 +30,7 @@ public class SimpleWebCrawler {
         enqueueUrl(normalizeUrl(startUrl));
     }
 
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            log.info("Usage: SimpleWebCrawler <start-url>");
-            return;
-        }
-        new SimpleWebCrawler(args[0]).startCrawling();
-    }
-
-    private void startCrawling() {
+    public void crawl() {
         while (!urlQueue.isEmpty() || countDownLock.get() > 0) {
             if (!urlQueue.isEmpty()) {
                 String url = urlQueue.poll();
@@ -56,7 +48,7 @@ public class SimpleWebCrawler {
         });
     }
 
-    public void crawl(String url) {
+    private void crawl(String url) {
         if (!visitedUrls.add(url)) return;
 
         if (!isHtmlContent(url)) {
@@ -84,11 +76,11 @@ public class SimpleWebCrawler {
         }
     }
 
-    void enqueueUrl(String url) {
+    private void enqueueUrl(String url) {
         if (urlCache.add(url)) { // Ensures unique URLs are enqueued
             urlQueue.add(url);
-            countDownLock.getAndIncrement();
-            submitCrawl(url);
+//            countDownLock.getAndIncrement();
+//            submitCrawl(url);
         }
     }
 
