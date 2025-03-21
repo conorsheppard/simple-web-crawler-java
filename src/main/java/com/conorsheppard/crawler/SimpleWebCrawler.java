@@ -1,5 +1,6 @@
-package com.conorsheppard;
+package com.conorsheppard.crawler;
 
+import com.conorsheppard.queue.UrlQueue;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -18,14 +19,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Data
 public class SimpleWebCrawler {
-    private final ExecutorService executor = Executors.newFixedThreadPool(2);
-    private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
+    private final ExecutorService executor;
+    private final UrlQueue urlQueue;
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<String> urlCache = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private static final AtomicInteger activeCrawlers = new AtomicInteger(0);
     private final String baseDomain;
 
-    public SimpleWebCrawler(String startUrl) {
+    public SimpleWebCrawler(String startUrl, UrlQueue urlQueue, int maxThreads) {
+        this.executor = Executors.newFixedThreadPool(maxThreads);
+        this.urlQueue = urlQueue;
         this.baseDomain = getDomain(startUrl);
         enqueueUrl(normalizeUrl(startUrl));
     }
@@ -33,7 +36,7 @@ public class SimpleWebCrawler {
     public void crawl() {
         while (!urlQueue.isEmpty() || activeCrawlers.get() > 0) {
             if (!urlQueue.isEmpty()) {
-                String url = urlQueue.poll();
+                String url = urlQueue.dequeue();
                 activeCrawlers.getAndIncrement();
                 submitCrawl(url);
             }
@@ -78,10 +81,10 @@ public class SimpleWebCrawler {
     }
 
     private void enqueueUrl(String url) {
-        if (urlCache.add(url)) urlQueue.add(url);
+        if (urlCache.add(url)) urlQueue.enqueue(url);
     }
 
-    boolean isHtmlContent(String url) {
+    public boolean isHtmlContent(String url) {
         try {
             Connection.Response response = Jsoup.connect(url).method(Connection.Method.HEAD).execute();
             String contentType = response.contentType();
@@ -92,11 +95,11 @@ public class SimpleWebCrawler {
         }
     }
 
-    boolean isValidUrl(String url) {
+    public boolean isValidUrl(String url) {
         return url.startsWith("http") && getDomain(url).equals(baseDomain);
     }
 
-    String getDomain(String url) {
+    public String getDomain(String url) {
         try {
             return new URI(url).getHost();
         } catch (Exception e) {
@@ -112,7 +115,7 @@ public class SimpleWebCrawler {
                 .replaceAll("/+$", "");
     }
 
-    void shutdownAndAwait() {
+    public void shutdownAndAwait() {
         log.info("Awaiting shutdown ...");
         executor.shutdown();
         try {

@@ -10,13 +10,17 @@ if [[ ! -f "$JAR_FILE" ]]; then
     mvn clean package || { echo "❌ Build failed!"; exit 1; }
 fi
 
-# Ensure an argument is provided
-if [[ $# -ne 1 ]]; then
-    echo "Usage: ./crawl <start-url>"
+# Check if at least 1 argument (website URL) is provided
+if [[ "$#" -lt 1 ]]; then
+    echo "Usage: ./crawl.sh <website-url> [queue-type] [max-threads]"
     exit 1
 fi
+
+WEBSITE_URL="$1"
+QUEUE_TYPE="${2:-ConcurrentQueue}"  # Default to ConcurrentQueue if not provided
+MAX_THREADS="${3:-10}"              # Default to 10 threads if not provided
 
 # Run the Java application
 echo "🚀 Running web crawler on $1"
 # java -jar "$JAR_FILE" "$MAIN_CLASS" "$1"
-mvn exec:java -Dexec.mainClass="$MAIN_CLASS" -Dexec.args="$1"
+mvn exec:java -Dexec.mainClass="$MAIN_CLASS" -Dexec.args="$WEBSITE_URL $QUEUE_TYPE $MAX_THREADS"
