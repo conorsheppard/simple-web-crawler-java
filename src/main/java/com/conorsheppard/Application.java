@@ -14,13 +14,15 @@ import picocli.CommandLine.Option;
 
 import java.util.concurrent.Callable;
 
+import static picocli.CommandLine.*;
+
 @Slf4j
 @Command(name = "WebCrawler", mixinStandardHelpOptions = true, version = "1.0",
         description = "A simple web crawler with configurable queue and cache options.")
 public class Application implements Callable<Integer> {
 
-    @Option(names = {"-u", "--url"}, description = "Start URL", required = true)
-    private String startUrl;
+    @Parameters(index = "0", description = "The website URL to crawl.", arity = "1")
+    private String baseURL;
 
     @Option(names = {"-q", "--queue"}, description = "Queue type (concurrentQueue, kafka)", defaultValue = "concurrentQueue")
     private String queueType;
@@ -33,7 +35,9 @@ public class Application implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        log.info("Starting Web Crawler with URL: {}", startUrl);
+        System.setProperty("picocli.ansi", "true");
+
+        log.info("Starting Web Crawler with URL: {}", baseURL);
         log.info("Queue Type: {}, Cache Type: {}, Max Threads: {}", queueType, cacheType, maxThreads);
 
         // Initialize queue]
@@ -46,7 +50,7 @@ public class Application implements Callable<Integer> {
                 ? new RedisUrlCache("redis://localhost:6379")
                 : new InMemoryUrlCache();
 
-        SimpleWebCrawler crawler = new SimpleWebCrawler(startUrl, queue, cache, maxThreads);
+        SimpleWebCrawler crawler = new SimpleWebCrawler(baseURL, queue, cache, maxThreads);
         crawler.crawl();
         return 0;
     }
