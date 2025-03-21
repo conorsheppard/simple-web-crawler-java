@@ -1,5 +1,6 @@
 package com.conorsheppard;
 
+import com.conorsheppard.cache.InMemoryUrlCache;
 import com.conorsheppard.crawler.SimpleWebCrawler;
 import com.conorsheppard.queue.ConcurrentQueue;
 import lombok.SneakyThrows;
@@ -25,7 +26,7 @@ class SimpleWebCrawlerTest {
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        crawler = new SimpleWebCrawler("https://example.com", new ConcurrentQueue(), 30);
+        crawler = new SimpleWebCrawler("https://example.com", new ConcurrentQueue(), new InMemoryUrlCache(), 30);
     }
 
     @Test

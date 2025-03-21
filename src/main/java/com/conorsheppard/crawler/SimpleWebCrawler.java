@@ -1,5 +1,6 @@
 package com.conorsheppard.crawler;
 
+import com.conorsheppard.cache.UrlCache;
 import com.conorsheppard.queue.UrlQueue;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -21,14 +22,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SimpleWebCrawler {
     private final ExecutorService executor;
     private final UrlQueue urlQueue;
+    private final UrlCache urlCache;
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private final Set<String> urlCache = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private static final AtomicInteger activeCrawlers = new AtomicInteger(0);
     private final String baseDomain;
 
-    public SimpleWebCrawler(String startUrl, UrlQueue urlQueue, int maxThreads) {
+    public SimpleWebCrawler(String startUrl, UrlQueue urlQueue, UrlCache urlCache, int maxThreads) {
         this.executor = Executors.newFixedThreadPool(maxThreads);
         this.urlQueue = urlQueue;
+        this.urlCache = urlCache;
         this.baseDomain = getDomain(startUrl);
         enqueueUrl(normalizeUrl(startUrl));
     }
