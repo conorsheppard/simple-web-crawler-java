@@ -23,5 +23,4 @@ MAX_THREADS="${4:-10}"              # Default to 10 threads if not provided
 
 # Run the Java application
 echo "🚀 Running web crawler on $1"
-# java -jar "$JAR_FILE" "$MAIN_CLASS" "$WEBSITE_URL" "$QUEUE_TYPE" "$CACHE_TYPE" "$MAX_THREADS"
 mvn exec:java -Dexec.mainClass="$MAIN_CLASS" -Dexec.args="$WEBSITE_URL $QUEUE_TYPE $CACHE_TYPE $MAX_THREADS"

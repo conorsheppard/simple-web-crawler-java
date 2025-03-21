@@ -75,6 +75,11 @@
             <artifactId>lettuce-core</artifactId>
             <version>6.5.5.RELEASE</version>
         </dependency>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>4.7.6</version>
+        </dependency>
     </dependencies>
 
     <profiles>
