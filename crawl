@@ -6,21 +6,42 @@ MAIN_CLASS="com.conorsheppard.Application"
 
 # Check if Maven build is needed
 if [[ ! -f "$JAR_FILE" ]]; then
-    echo "Building project with Maven..."
+    echo "🔧 Building project with Maven..."
     mvn clean package || { echo "❌ Build failed!"; exit 1; }
 fi
 
-# Check if at least 1 argument (website URL) is provided
-if [[ "$#" -lt 1 ]]; then
-    echo "Usage: ./crawl.sh <website-url> [queue-type] [cache-type] [max-threads]"
+# Default values
+QUEUE_TYPE="concurrentQueue"  # Default queue type
+CACHE_TYPE="inMemory"         # Default cache type
+MAX_THREADS=30                # Default thread count
+
+# If only one argument is passed, assume it's the URL
+if [[ "$#" -eq 1 ]]; then
+    WEBSITE_URL="$1"
+else
+    # Parse named arguments
+    while [[ "$#" -gt 0 ]]; do
+        case "$1" in
+            --url) WEBSITE_URL="$2"; shift 2;;
+            --queue) QUEUE_TYPE="$2"; shift 2;;
+            --cache) CACHE_TYPE="$2"; shift 2;;
+            --threads) MAX_THREADS="$2"; shift 2;;
+            *) echo "❌ Unknown option: $1"; exit 1;;
+        esac
+    done
+fi
+
+# Ensure URL is set
+if [[ -z "$WEBSITE_URL" ]]; then
+    echo "❌ Error: No URL provided!"
+    echo "Usage: ./crawl <website-url> OR ./crawl --url <website-url> [--queue <queue-type>] [--cache <cache-type>] [--threads <max-threads>]"
     exit 1
 fi
 
-WEBSITE_URL="$1"
-QUEUE_TYPE="${2:-ConcurrentQueue}"  # Default to ConcurrentQueue if not provided
-CACHE_TYPE="${3:-ConcurrentCache}"  # Default to ConcurrentCache if not provided
-MAX_THREADS="${4:-10}"              # Default to 10 threads if not provided
-
 # Run the Java application
-echo "🚀 Running web crawler on $1"
-mvn exec:java -Dexec.mainClass="$MAIN_CLASS" -Dexec.args="$WEBSITE_URL $QUEUE_TYPE $CACHE_TYPE $MAX_THREADS"
+echo "🚀 Running web crawler on $WEBSITE_URL with:"
+echo "   🏗 Queue Type: $QUEUE_TYPE"
+echo "   🗄 Cache Type: $CACHE_TYPE"
+echo "   🔄 Max Threads: $MAX_THREADS"
+
+mvn exec:java -Dexec.mainClass="$MAIN_CLASS" -Dexec.args="--url $WEBSITE_URL --queue $QUEUE_TYPE --cache $CACHE_TYPE --threads $MAX_THREADS"
