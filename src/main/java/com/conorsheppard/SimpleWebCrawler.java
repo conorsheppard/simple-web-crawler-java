@@ -18,11 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 @Data
 public class SimpleWebCrawler {
-    private final ExecutorService executor = Executors.newFixedThreadPool(50);
+    private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private final Queue<String> urlQueue = new ConcurrentLinkedQueue<>();
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<String> urlCache = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private static final AtomicInteger countDownLock = new AtomicInteger(0);
+    private static final AtomicInteger activeCrawlers = new AtomicInteger(0);
     private final String baseDomain;
 
     public SimpleWebCrawler(String startUrl) {
@@ -31,10 +31,10 @@ public class SimpleWebCrawler {
     }
 
     public void crawl() {
-        while (!urlQueue.isEmpty() || countDownLock.get() > 0) {
+        while (!urlQueue.isEmpty() || activeCrawlers.get() > 0) {
             if (!urlQueue.isEmpty()) {
                 String url = urlQueue.poll();
-                countDownLock.getAndIncrement();
+                activeCrawlers.getAndIncrement();
                 submitCrawl(url);
             }
         }
@@ -44,7 +44,7 @@ public class SimpleWebCrawler {
     private void submitCrawl(String url) {
         executor.submit(() -> {
             crawl(url);
-            countDownLock.getAndDecrement();
+            activeCrawlers.getAndDecrement();
         });
     }
 
@@ -71,17 +71,14 @@ public class SimpleWebCrawler {
 
             log.info("  visitedUrls size: {}", visitedUrls.size());
             log.info("  urlCache size: {}", urlCache.size());
+            log.info("  urlQueue size: {}", urlQueue.size());
         } catch (Exception e) {
             log.error("Failed to crawl: {}", url, e);
         }
     }
 
     private void enqueueUrl(String url) {
-        if (urlCache.add(url)) { // Ensures unique URLs are enqueued
-            urlQueue.add(url);
-//            countDownLock.getAndIncrement();
-//            submitCrawl(url);
-        }
+        if (urlCache.add(url)) urlQueue.add(url);
     }
 
     boolean isHtmlContent(String url) {
