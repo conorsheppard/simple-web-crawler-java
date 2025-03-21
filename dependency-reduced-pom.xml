@@ -27,7 +27,7 @@
         <artifactId>exec-maven-plugin</artifactId>
         <version>3.5.0</version>
         <configuration>
-          <mainClass>com.conorsheppard.SimpleWebCrawler</mainClass>
+          <mainClass>com.conorsheppard.Application</mainClass>
         </configuration>
       </plugin>
       <plugin>
@@ -36,7 +36,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>com.conorsheppard.SimpleWebCrawler</mainClass>
+              <mainClass>com.conorsheppard.Application</mainClass>
             </manifest>
           </archive>
         </configuration>
