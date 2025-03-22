@@ -81,6 +81,9 @@ class SimpleWebCrawlerTest {
         // Ensure different paths are not mistakenly treated as the same
         assertNotEquals("https://monzo.com/supporting-customers",
                 normalizeUrl("https://monzo.com/another-path"));
+
+        assertEquals("https://monzo.com/supporting customers",
+                normalizeUrl("https://monzo.com/supporting customers"));
     }
 
     // This test is more about ensuring the logic is correct rather than testing the queue itself

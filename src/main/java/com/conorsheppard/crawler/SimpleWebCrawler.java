@@ -47,7 +47,6 @@ public class SimpleWebCrawler {
         while (!urlQueue.isEmpty() || activeCrawlers.get() > 0) {
             if (!urlQueue.isEmpty()) {
                 String url = urlQueue.dequeue();
-                activeCrawlers.getAndIncrement();
                 submitCrawl(url);
             }
         }
@@ -57,8 +56,11 @@ public class SimpleWebCrawler {
     private void submitCrawl(String url) {
         activeCrawlers.incrementAndGet();
         executor.submit(() -> {
-            crawl(url);
-            activeCrawlers.decrementAndGet();
+            try {
+                crawl(url);
+            } finally {
+                activeCrawlers.decrementAndGet();
+            }
         });
     }
 
@@ -142,7 +144,7 @@ public class SimpleWebCrawler {
 
     @SneakyThrows
     public static String normalizeUrl(String url) {
-        URI uri = new URI(url);
+        URI uri = new URI(url.trim().replace(" ", "%20"));
         return (uri.getScheme() + "://" + uri.getHost() + uri.getPath())
                 .toLowerCase()
                 .replaceAll("/+$", "");
