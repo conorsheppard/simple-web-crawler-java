@@ -56,7 +56,6 @@ public class Application implements Callable<Integer> {
     }
 
     public static void main(String[] args) {
-        System.setProperty("org.slf4j.simpleLogger.logFile", "crawler.log");
         int exitCode = new CommandLine(new Application()).execute(args);
         System.exit(exitCode);
     }

@@ -73,7 +73,7 @@ public class SimpleWebCrawler {
         }
 
         try {
-            Document doc = Jsoup.connect(url).timeout(5000).get();
+            Document doc = Jsoup.connect(url).timeout(1000).get();
             Elements links = doc.select("a[href]");
 
             for (Element link : links) {
@@ -100,11 +100,9 @@ public class SimpleWebCrawler {
             int discovered = urlCache.size();
             int percentage = (discovered == 0) ? 0 : (scraped * 100) / discovered;
 
-            synchronized (System.out) {
-                terminal.writer().printf("\r🌍 Crawling: [%s] %d%% (%d/%d URLs)",
-                        progressBar(percentage), percentage, scraped, discovered);
-                terminal.flush();
-            }
+            terminal.writer().printf("\r🌍 Crawling: [%s] %d%% (%d/%d URLs)",
+                    progressBar(percentage), percentage, scraped, discovered);
+            terminal.flush();
         }
     }
 
@@ -131,8 +129,16 @@ public class SimpleWebCrawler {
     }
 
     public boolean isValidUrl(String url) {
-        return url.startsWith("http") && getDomain(url).equals(baseDomain);
+        return url.startsWith("http") &&
+                getDomain(url).equals(baseDomain) &&
+                !isIgnoredFile(url);
     }
+
+    private boolean isIgnoredFile(String url) {
+        String lowerUrl = url.toLowerCase();
+        return lowerUrl.matches(".*\\.(pdf|jpg|png|gif|mp4|zip|exe|docx|xlsx|pptx|mp3)(\\?.*)?$");
+    }
+
 
     public String getDomain(String url) {
         try {
@@ -162,6 +168,6 @@ public class SimpleWebCrawler {
             log.error("Interrupted while waiting for completion", e);
         }
         log.info("Crawling complete.");
-        log.info("total links processed: {}", urlCache.size());
+        log.info("total valid URLs processed: {}", urlCache.size());
     }
 }
