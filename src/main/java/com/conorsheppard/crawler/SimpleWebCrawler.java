@@ -68,12 +68,12 @@ public class SimpleWebCrawler {
         if (!visitedUrls.add(url)) return;
 
         if (!isHtmlContent(url)) {
-            log.info("Skipping non-HTML URL: {}", url);
+            log.debug("Skipping non-HTML URL: {}", url);
             return;
         }
 
         try {
-            Document doc = Jsoup.connect(url).timeout(1000).get();
+            Document doc = Jsoup.connect(url).timeout(5000).get();
             Elements links = doc.select("a[href]");
 
             for (Element link : links) {
@@ -157,6 +157,7 @@ public class SimpleWebCrawler {
     }
 
     public void shutdownAndAwait() {
+        System.out.println();
         log.info("Awaiting shutdown ...");
         executor.shutdown();
         try {

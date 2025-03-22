@@ -40,12 +40,10 @@ public class Application implements Callable<Integer> {
         log.info("Starting Web Crawler with URL: {}", baseURL);
         log.info("Queue Type: {}, Cache Type: {}, Max Threads: {}", queueType, cacheType, maxThreads);
 
-        // Initialize queue]
         UrlQueue queue = "kafka".equalsIgnoreCase(queueType)
                 ? new KafkaQueue("localhost:9092")
                 : new ConcurrentQueue();
 
-        // Initialize cache
         UrlCache cache = "redis".equalsIgnoreCase(cacheType)
                 ? new RedisUrlCache("redis://localhost:6379")
                 : new InMemoryUrlCache();
