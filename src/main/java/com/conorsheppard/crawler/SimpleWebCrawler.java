@@ -5,6 +5,8 @@ import com.conorsheppard.queue.UrlQueue;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,13 +28,19 @@ public class SimpleWebCrawler {
     private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private static final AtomicInteger activeCrawlers = new AtomicInteger(0);
     private final String baseDomain;
+    private final Terminal terminal;
 
+
+    @SneakyThrows
     public SimpleWebCrawler(String startUrl, UrlQueue urlQueue, UrlCache urlCache, int maxThreads) {
         this.executor = Executors.newFixedThreadPool(maxThreads);
         this.urlQueue = urlQueue;
         this.urlCache = urlCache;
         this.baseDomain = getDomain(startUrl);
+        this.terminal = TerminalBuilder.terminal();
         enqueueUrl(normalizeUrl(startUrl));
+
+        startProgressBar();
     }
 
     public void crawl() {
@@ -47,9 +55,10 @@ public class SimpleWebCrawler {
     }
 
     private void submitCrawl(String url) {
+        activeCrawlers.incrementAndGet();
         executor.submit(() -> {
             crawl(url);
-            activeCrawlers.getAndDecrement();
+            activeCrawlers.decrementAndGet();
         });
     }
 
@@ -61,26 +70,48 @@ public class SimpleWebCrawler {
             return;
         }
 
-        log.info("Visiting: {}", url);
         try {
-            Document doc = Jsoup.connect(url).get();
+            Document doc = Jsoup.connect(url).timeout(5000).get();
             Elements links = doc.select("a[href]");
 
             for (Element link : links) {
                 String nextUrl = normalizeUrl(link.absUrl("href"));
-                if (isValidUrl(nextUrl)) {
-                    log.info("|----> Found: {}", nextUrl);
-                    enqueueUrl(nextUrl);
+                if (isValidUrl(nextUrl) && urlCache.add(nextUrl)) {
+                    urlQueue.enqueue(nextUrl);
                 }
             }
 
-            log.info("  visitedUrls size: {}", visitedUrls.size());
-            log.info("  urlCache size: {}", urlCache.size());
-            log.info("  urlQueue size: {}", urlQueue.size());
         } catch (Exception e) {
             log.error("Failed to crawl: {}", url, e);
         }
     }
+
+    public void startProgressBar() {
+        new Thread(this::writeProgress).start();
+    }
+
+    @SneakyThrows
+    void writeProgress() {
+        while (!executor.isShutdown()) {
+            Thread.sleep(500); // Refresh every 500ms
+            int scraped = visitedUrls.size();
+            int discovered = urlCache.size();
+            int percentage = (discovered == 0) ? 0 : (scraped * 100) / discovered;
+
+            synchronized (System.out) {
+                terminal.writer().printf("\r🌍 Crawling: [%s] %d%% (%d/%d URLs)",
+                        progressBar(percentage), percentage, scraped, discovered);
+                terminal.flush();
+            }
+        }
+    }
+
+    private String progressBar(int percentage) {
+        int width = 30; // Width of the bar
+        int filled = (percentage * width) / 100;
+        return "█".repeat(filled) + "-".repeat(width - filled);
+    }
+
 
     private void enqueueUrl(String url) {
         if (urlCache.add(url)) urlQueue.enqueue(url);
