@@ -10,6 +10,9 @@
         <encoder>
             <pattern>%n%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>  <!-- Console only logs INFO and above -->
+        </filter>
     </appender>
 
     <!-- File Appender -->
@@ -35,21 +38,20 @@
         </filter>
     </appender>
 
-    <logger name="com.conorsheppard.crawler.SimpleWebCrawler" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="CONSOLE"/>  <!-- Logs INFO messages to console -->
-        <appender-ref ref="FILE"/>     <!-- Logs ERROR messages to file -->
+    <!-- Logger for Crawler (DEBUG level for file logging) -->
+    <logger name="com.conorsheppard.crawler.SimpleWebCrawler" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE"/>  <!-- Logs DEBUG and above to file -->
+        <appender-ref ref="CONSOLE"/>  <!-- Logs INFO and above to console -->
     </logger>
-
-
-    <logger name="com.conorsheppard.Application" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="CONSOLE"/>  <!-- Logs INFO messages to console -->
-        <appender-ref ref="FILE"/>     <!-- Logs ERROR messages to file -->
+    
+    <logger name="com.conorsheppard.Application" level="INFO" additivity="false">
+        <appender-ref ref="FILE"/>  <!-- Logs INFO and above to file -->
+        <appender-ref ref="CONSOLE"/>  <!-- Logs INFO and above to console -->
     </logger>
 
     <root level="ERROR">
         <appender-ref ref="FILE"/>
+        <appender-ref ref="CONSOLE"/>
     </root>
 
 </configuration>
