@@ -12,6 +12,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+import java.util.Scanner;
 import java.util.concurrent.Callable;
 
 import static picocli.CommandLine.*;
@@ -21,7 +22,7 @@ import static picocli.CommandLine.*;
         description = "A simple web crawler with configurable queue and cache options.")
 public class Application implements Callable<Integer> {
 
-    @Parameters(index = "0", description = "The website URL to crawl.", arity = "1")
+    @Parameters(index = "0", description = "The website URL to crawl.", arity = "0..1")
     private String baseURL;
 
     @Option(names = {"-q", "--queue"}, description = "Queue type (concurrentQueue, kafka)", defaultValue = "concurrentQueue")
@@ -35,6 +36,8 @@ public class Application implements Callable<Integer> {
 
     @Override
     public Integer call() {
+        getBaseURL();
+        if (baseURL.isEmpty()) return 1;
         UrlQueue queue = getQueue();
         UrlCache cache = getCache();
         SimpleWebCrawler crawler = new SimpleWebCrawler(baseURL, queue, cache, maxThreads);
@@ -46,6 +49,18 @@ public class Application implements Callable<Integer> {
     public static void main(String[] args) {
         int exitCode = new CommandLine(new Application()).execute(args);
         System.exit(exitCode);
+    }
+
+    private void getBaseURL() {
+        if (baseURL == null || baseURL.isEmpty()) {
+            Scanner scanner = new Scanner(System.in);
+            log.info("Enter the URL to scrape: ");
+            baseURL = scanner.nextLine().trim();
+        }
+
+        if (baseURL.isEmpty()) {
+            log.error("No URL provided. Exiting...");
+        }
     }
 
     private UrlQueue getQueue() {
