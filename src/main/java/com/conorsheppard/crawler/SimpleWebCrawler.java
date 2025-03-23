@@ -75,17 +75,15 @@ public class SimpleWebCrawler {
         try {
             Document doc = Jsoup.connect(url).timeout(5000).get();
             Elements links = doc.select("a[href]");
-
-            for (Element link : links) {
-                String nextUrl = normalizeUrl(link.absUrl("href"));
-                if (isValidUrl(nextUrl) && urlCache.add(nextUrl)) {
-                    urlQueue.enqueue(nextUrl);
-                }
-            }
-
+            links.forEach(this::normaliseAndEnqueue);
         } catch (Exception e) {
             log.error("Failed to crawl: {}", url, e);
         }
+    }
+
+    private void normaliseAndEnqueue(Element link) {
+        String nextUrl = normalizeUrl(link.absUrl("href"));
+        if (isValidUrl(nextUrl)) enqueueUrl(nextUrl);
     }
 
     public void startProgressBar() {
