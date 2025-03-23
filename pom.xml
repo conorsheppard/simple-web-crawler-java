@@ -65,6 +65,26 @@
             <artifactId>byte-buddy</artifactId>
             <version>1.17.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>3.9.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+            <version>6.5.5.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli</artifactId>
+            <version>4.7.6</version>
+        </dependency>
+        <dependency>
+                <groupId>org.jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>3.29.0</version>
+        </dependency>
     </dependencies>
 
     <profiles>

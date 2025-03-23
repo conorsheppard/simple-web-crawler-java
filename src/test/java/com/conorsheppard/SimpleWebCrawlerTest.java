@@ -1,9 +1,11 @@
 package com.conorsheppard;
 
+import com.conorsheppard.cache.InMemoryUrlCache;
+import com.conorsheppard.crawler.SimpleWebCrawler;
+import com.conorsheppard.queue.ConcurrentQueue;
 import lombok.SneakyThrows;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -14,7 +16,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
 
-import static com.conorsheppard.SimpleWebCrawler.normalizeUrl;
+import static com.conorsheppard.crawler.SimpleWebCrawler.normalizeUrl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -24,7 +26,7 @@ class SimpleWebCrawlerTest {
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        crawler = new SimpleWebCrawler("https://example.com");
+        crawler = new SimpleWebCrawler("https://example.com", new ConcurrentQueue(), new InMemoryUrlCache(), 30);
     }
 
     @Test
@@ -79,6 +81,9 @@ class SimpleWebCrawlerTest {
         // Ensure different paths are not mistakenly treated as the same
         assertNotEquals("https://monzo.com/supporting-customers",
                 normalizeUrl("https://monzo.com/another-path"));
+
+        assertEquals("https://monzo.com/supporting customers",
+                normalizeUrl("https://monzo.com/supporting customers"));
     }
 
     // This test is more about ensuring the logic is correct rather than testing the queue itself
