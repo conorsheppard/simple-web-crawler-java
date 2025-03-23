@@ -45,11 +45,4 @@ if [[ -z "$WEBSITE_URL" ]]; then
     exit 1
 fi
 
-# Run the Java application
-echo "🚀 Running web crawler..."
-echo "🔗 URL: $WEBSITE_URL"
-echo "🗂 Queue Type: $QUEUE_TYPE"
-echo "🛠 Cache Type: $CACHE_TYPE"
-echo "⚡ Threads: $MAX_THREADS"
-
 mvn exec:java -Dexec.mainClass="$MAIN_CLASS" -Dexec.args="$WEBSITE_URL -q $QUEUE_TYPE -c $CACHE_TYPE -t $MAX_THREADS"

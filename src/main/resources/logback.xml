@@ -52,6 +52,13 @@
         <appender-ref ref="FILE"/>     <!-- Logs ERROR messages to file -->
     </logger>
 
+
+    <logger name="com.conorsheppard.Application" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="CONSOLE"/>  <!-- Logs INFO messages to console -->
+        <appender-ref ref="FILE"/>     <!-- Logs ERROR messages to file -->
+    </logger>
+
     <root level="ERROR">
         <appender-ref ref="FILE"/>
     </root>

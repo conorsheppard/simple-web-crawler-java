@@ -35,20 +35,10 @@ public class Application implements Callable<Integer> {
 
     @Override
     public Integer call() {
-        System.setProperty("picocli.ansi", "true");
-
-        log.info("Starting Web Crawler with URL: {}", baseURL);
-        log.info("Queue Type: {}, Cache Type: {}, Max Threads: {}", queueType, cacheType, maxThreads);
-
-        UrlQueue queue = "kafka".equalsIgnoreCase(queueType)
-                ? new KafkaQueue("localhost:9092")
-                : new ConcurrentQueue();
-
-        UrlCache cache = "redis".equalsIgnoreCase(cacheType)
-                ? new RedisUrlCache("redis://localhost:6379")
-                : new InMemoryUrlCache();
-
+        UrlQueue queue = getQueue();
+        UrlCache cache = getCache();
         SimpleWebCrawler crawler = new SimpleWebCrawler(baseURL, queue, cache, maxThreads);
+        logCrawlerInfo();
         crawler.crawl();
         return 0;
     }
@@ -56,5 +46,37 @@ public class Application implements Callable<Integer> {
     public static void main(String[] args) {
         int exitCode = new CommandLine(new Application()).execute(args);
         System.exit(exitCode);
+    }
+
+    private UrlQueue getQueue() {
+        return isKafka() ? new KafkaQueue("localhost:9092") : new ConcurrentQueue();
+    }
+
+    private UrlCache getCache() {
+        return isRedis() ? new RedisUrlCache("redis://localhost:6379") : new InMemoryUrlCache();
+    }
+
+    public void logCrawlerInfo() {
+        log.info("""
+                        
+                        🚀 Running web crawler...
+                        🔗 URL: {}
+                        🗂 Queue Type: {}
+                        🛠 Cache Type: {}
+                        ⚡ Threads: {}
+                        """,
+                baseURL,
+                isKafka() ? "kafka" : "concurrentQueue",
+                isRedis() ? "redis" : "inMemory",
+                maxThreads);
+
+    }
+
+    private boolean isKafka() {
+        return "kafka".equalsIgnoreCase(queueType);
+    }
+
+    private boolean isRedis() {
+        return "redis".equalsIgnoreCase(cacheType);
     }
 }
