@@ -2,7 +2,6 @@ package com.conorsheppard;
 
 import com.conorsheppard.cache.InMemoryUrlCache;
 import com.conorsheppard.cache.UrlCache;
-import com.conorsheppard.console.ProgressWriter;
 import com.conorsheppard.crawler.SimpleWebCrawler;
 import com.conorsheppard.queue.ConcurrentQueue;
 import com.conorsheppard.queue.UrlQueue;
@@ -10,6 +9,7 @@ import com.conorsheppard.web.WebClient;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -42,13 +42,7 @@ class SimpleWebCrawlerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         crawler = new SimpleWebCrawler("https://example.com", new ConcurrentQueue(), new InMemoryUrlCache(),
-                Executors.newSingleThreadExecutor(), new ProgressBarStub(), mockWebClient);
-    }
-
-    @NoArgsConstructor
-    static class ProgressBarStub implements ProgressWriter {
-        @Override
-        public void update(int scraped, int discovered) { /* No progress bar needed for tests */ }
+                Executors.newSingleThreadExecutor(), TerminalBuilder.terminal(), mockWebClient);
     }
 
     @Test
