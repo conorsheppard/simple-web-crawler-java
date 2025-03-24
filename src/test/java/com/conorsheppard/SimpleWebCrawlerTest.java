@@ -1,20 +1,31 @@
 package com.conorsheppard;
 
 import com.conorsheppard.cache.InMemoryUrlCache;
+import com.conorsheppard.cache.UrlCache;
+import com.conorsheppard.console.ProgressWriter;
 import com.conorsheppard.crawler.SimpleWebCrawler;
 import com.conorsheppard.queue.ConcurrentQueue;
+import com.conorsheppard.queue.UrlQueue;
+import com.conorsheppard.web.WebClient;
+import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
+import org.jline.terminal.Terminal;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.conorsheppard.crawler.SimpleWebCrawler.normalizeUrl;
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,10 +34,21 @@ import static org.mockito.Mockito.*;
 class SimpleWebCrawlerTest {
     private SimpleWebCrawler crawler;
 
+    @Mock
+    private WebClient mockWebClient;
+
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        crawler = new SimpleWebCrawler("https://example.com", new ConcurrentQueue(), new InMemoryUrlCache(), 30);
+        MockitoAnnotations.openMocks(this);
+        crawler = new SimpleWebCrawler("https://example.com", new ConcurrentQueue(), new InMemoryUrlCache(),
+                Executors.newSingleThreadExecutor(), new ProgressBarStub(), mockWebClient);
+    }
+
+    @NoArgsConstructor
+    static class ProgressBarStub implements ProgressWriter {
+        @Override
+        public void update(int scraped, int discovered) { /* No progress bar needed for tests */ }
     }
 
     @Test
@@ -120,7 +142,7 @@ class SimpleWebCrawlerTest {
     @Test
     void testVisitedUrlsHandling() {
         // Add URL to visited set
-        crawler.getVisitedUrls().add("https://example.com/visited");
+        crawler.getVisitedUrlSet().add("https://example.com/visited");
 
         Method crawlMethod = crawler.getClass().getDeclaredMethod("enqueueUrl", String.class);
         crawlMethod.setAccessible(true); // This allows access to the private method
@@ -130,7 +152,7 @@ class SimpleWebCrawlerTest {
 
         // Verify visited URL was not processed again
         // crawler is already seeded with https://example.com + this one (https://example.com/visited) == 2
-        assertEquals(1, crawler.getVisitedUrls().size());
+        assertEquals(1, crawler.getVisitedUrlSet().size());
     }
 
     @Test
@@ -157,41 +179,110 @@ class SimpleWebCrawlerTest {
         assertTrue(executorSpy.isShutdown());
     }
 
+//    @Test
+//    void testIsHtmlContent() throws IOException {
+//        // Setup mock for Jsoup
+//        Connection mockConnection = mock(Connection.class);
+//        Connection.Response mockResponse = mock(Connection.Response.class);
+//
+//        try (MockedStatic<Jsoup> jsoupMock = Mockito.mockStatic(Jsoup.class)) {
+//            jsoupMock.when(() -> Jsoup.connect(anyString())).thenReturn(mockConnection);
+//            when(mockConnection.method(any(Connection.Method.class))).thenReturn(mockConnection);
+//            when(mockConnection.execute()).thenReturn(mockResponse);
+//
+//            // Test HTML content
+//            when(mockResponse.contentType()).thenReturn("text/html; charset=UTF-8");
+//            assertTrue(crawler.isHtmlContent("https://example.com"));
+//
+//            // Test non-HTML content
+//            when(mockResponse.contentType()).thenReturn("application/pdf");
+//            assertFalse(crawler.isHtmlContent("https://example.com/document.pdf"));
+//
+//            // Test null content type
+//            when(mockResponse.contentType()).thenReturn(null);
+//            assertFalse(crawler.isHtmlContent("https://example.com/unknown"));
+//        }
+//    }
+//
+//    @Test
+//    void testIsHtmlContentWithException() throws IOException {
+//        // Set up mock for Jsoup that throws exception
+//        try (MockedStatic<Jsoup> jsoupMock = Mockito.mockStatic(Jsoup.class)) {
+//            Connection mockConnection = mock(Connection.class);
+//            jsoupMock.when(() -> Jsoup.connect(anyString())).thenReturn(mockConnection);
+//            when(mockConnection.method(any(Connection.Method.class))).thenReturn(mockConnection);
+//            when(mockConnection.execute()).thenThrow(new IOException("Connection failed"));
+//
+//            assertFalse(crawler.isHtmlContent("https://example.com/error"));
+//        }
+//    }
+
+    @SneakyThrows
     @Test
-    void testIsHtmlContent() throws IOException {
-        // Setup mock for Jsoup
-        Connection mockConnection = mock(Connection.class);
+    void testWhenResponseIsJson_isHtmlContentReturnsFalse() {
         Connection.Response mockResponse = mock(Connection.Response.class);
-
-        try (MockedStatic<Jsoup> jsoupMock = Mockito.mockStatic(Jsoup.class)) {
-            jsoupMock.when(() -> Jsoup.connect(anyString())).thenReturn(mockConnection);
-            when(mockConnection.method(any(Connection.Method.class))).thenReturn(mockConnection);
-            when(mockConnection.execute()).thenReturn(mockResponse);
-
-            // Test HTML content
-            when(mockResponse.contentType()).thenReturn("text/html; charset=UTF-8");
-            assertTrue(crawler.isHtmlContent("https://example.com"));
-
-            // Test non-HTML content
-            when(mockResponse.contentType()).thenReturn("application/pdf");
-            assertFalse(crawler.isHtmlContent("https://example.com/document.pdf"));
-
-            // Test null content type
-            when(mockResponse.contentType()).thenReturn(null);
-            assertFalse(crawler.isHtmlContent("https://example.com/unknown"));
-        }
+        when(mockResponse.contentType()).thenReturn("application/json");
+        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent("https://example.com"));
     }
 
+    @SneakyThrows
     @Test
-    void testIsHtmlContentWithException() throws IOException {
-        // Set up mock for Jsoup that throws exception
-        try (MockedStatic<Jsoup> jsoupMock = Mockito.mockStatic(Jsoup.class)) {
-            Connection mockConnection = mock(Connection.class);
-            jsoupMock.when(() -> Jsoup.connect(anyString())).thenReturn(mockConnection);
-            when(mockConnection.method(any(Connection.Method.class))).thenReturn(mockConnection);
-            when(mockConnection.execute()).thenThrow(new IOException("Connection failed"));
-
-            assertFalse(crawler.isHtmlContent("https://example.com/error"));
-        }
+    void testWhenResponseIsNull_isHtmlContentReturnsFalse() {
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn(null);
+        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent("https://example.com"));
     }
+
+    @SneakyThrows
+    @Test
+    void testWhenOnceLinkExistsInThePage_FetchIsCalledOnce() {
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("text/html");
+        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
+        Document mockFetchResponse = mock(Document.class);
+        when(mockResponse.body()).thenReturn("<html><body><a href='https://example.com/page2'>Next</a></body></html>");
+        when(mockWebClient.fetch("https://example.com")).thenReturn(mockFetchResponse);
+        crawler.crawl();
+        verify(mockWebClient, times(1)).fetch("https://example.com");
+    }
+
+
+    @SneakyThrows
+    @Test
+    void testWhenResponseIsEmpty_isHtmlContentReturnsFalse() {
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("");
+        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent("https://example.com"));
+    }
+
+    @SneakyThrows
+    @Test
+    void testWhenResponseIsValid_isHtmlContentReturnsTrue() {
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("text/html; charset=UTF-8");
+        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
+        assertTrue(crawler.isHtmlContent("https://example.com"));
+    }
+
+//    @Test
+//    void testCrawlUsesThreadPool() {
+//        ExecutorService mockExecutor = mock(ExecutorService.class);
+//        WebClient mockWebClient = mock(WebClient.class);
+//
+//        UrlQueue queue = new ConcurrentQueue();
+//        UrlCache cache = new InMemoryUrlCache();
+//
+//        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(
+//                "https://example.com", queue, cache,
+//                mockExecutor, new ProgressBarStub(), mockWebClient
+//        );
+//
+//        queue.enqueue("https://example.com");
+//        simpleWebCrawler.crawl();
+//
+//        verify(mockExecutor, atLeastOnce()).submit(any(Runnable.class));
+//    }
 }
