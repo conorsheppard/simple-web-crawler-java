@@ -173,44 +173,6 @@ class SimpleWebCrawlerTest {
         assertTrue(executorSpy.isShutdown());
     }
 
-//    @Test
-//    void testIsHtmlContent() throws IOException {
-//        // Setup mock for Jsoup
-//        Connection mockConnection = mock(Connection.class);
-//        Connection.Response mockResponse = mock(Connection.Response.class);
-//
-//        try (MockedStatic<Jsoup> jsoupMock = Mockito.mockStatic(Jsoup.class)) {
-//            jsoupMock.when(() -> Jsoup.connect(anyString())).thenReturn(mockConnection);
-//            when(mockConnection.method(any(Connection.Method.class))).thenReturn(mockConnection);
-//            when(mockConnection.execute()).thenReturn(mockResponse);
-//
-//            // Test HTML content
-//            when(mockResponse.contentType()).thenReturn("text/html; charset=UTF-8");
-//            assertTrue(crawler.isHtmlContent("https://example.com"));
-//
-//            // Test non-HTML content
-//            when(mockResponse.contentType()).thenReturn("application/pdf");
-//            assertFalse(crawler.isHtmlContent("https://example.com/document.pdf"));
-//
-//            // Test null content type
-//            when(mockResponse.contentType()).thenReturn(null);
-//            assertFalse(crawler.isHtmlContent("https://example.com/unknown"));
-//        }
-//    }
-//
-//    @Test
-//    void testIsHtmlContentWithException() throws IOException {
-//        // Set up mock for Jsoup that throws exception
-//        try (MockedStatic<Jsoup> jsoupMock = Mockito.mockStatic(Jsoup.class)) {
-//            Connection mockConnection = mock(Connection.class);
-//            jsoupMock.when(() -> Jsoup.connect(anyString())).thenReturn(mockConnection);
-//            when(mockConnection.method(any(Connection.Method.class))).thenReturn(mockConnection);
-//            when(mockConnection.execute()).thenThrow(new IOException("Connection failed"));
-//
-//            assertFalse(crawler.isHtmlContent("https://example.com/error"));
-//        }
-//    }
-
     @SneakyThrows
     @Test
     void testWhenResponseIsJson_isHtmlContentReturnsFalse() {
@@ -259,6 +221,13 @@ class SimpleWebCrawlerTest {
         when(mockResponse.contentType()).thenReturn("text/html; charset=UTF-8");
         when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
         assertTrue(crawler.isHtmlContent("https://example.com"));
+    }
+
+    @SneakyThrows
+    @Test
+    void testWhenWebClientThrowsIOException_isHtmlContentCatchesAndReturnsFalse() {
+        when(mockWebClient.head("https://example.com")).thenThrow(new IOException());
+        assertFalse(crawler.isHtmlContent("https://example.com"));
     }
 
 //    @Test
