@@ -1,10 +1,8 @@
 package com.conorsheppard;
 
 import com.conorsheppard.cache.InMemoryUrlCache;
-import com.conorsheppard.cache.UrlCache;
 import com.conorsheppard.crawler.SimpleWebCrawler;
 import com.conorsheppard.queue.ConcurrentQueue;
-import com.conorsheppard.queue.UrlQueue;
 import com.conorsheppard.web.WebClient;
 import lombok.SneakyThrows;
 import org.jline.terminal.TerminalBuilder;
@@ -15,6 +13,8 @@ import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -30,8 +30,6 @@ import java.util.concurrent.TimeUnit;
 import static com.conorsheppard.crawler.SimpleWebCrawler.normalizeUrl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 class SimpleWebCrawlerTest {
     private SimpleWebCrawler crawler;
@@ -126,7 +124,7 @@ class SimpleWebCrawlerTest {
 
         // Access the private method using reflection
         Method enqueueUrlMethod = crawler.getClass().getDeclaredMethod("enqueueUrl", String.class);
-        enqueueUrlMethod.setAccessible(true); // This allows access to the private method
+        enqueueUrlMethod.setAccessible(true);
 
         // Invoke the private method
         enqueueUrlMethod.invoke(crawler, "https://example.com/new-page");
@@ -321,5 +319,34 @@ class SimpleWebCrawlerTest {
 
         // Verify that the interrupted flag was set on the current thread
         assertTrue(Thread.currentThread().isInterrupted());
+    }
+
+    @Test
+    void testCrawlHandlesIOException1() throws Exception {
+        // Set up the spy with the real crawler instance
+        crawler = new SimpleWebCrawler(EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
+                Executors.newSingleThreadExecutor(), TerminalBuilder.terminal(), mockWebClient);
+
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("text/html");
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+
+        Document mockDocument = mock(Document.class);
+        Element element = new Element("a");
+        element.attr("href", "https://example.com/page2");
+        when(mockDocument.select("a[href]")).thenReturn(new Elements(List.of(element)));
+        // Simulate an IOException during web client fetch
+        when(mockWebClient.fetch(EXAMPLE_URL)).thenThrow(new IOException("Network error"));
+
+        // Access the private crawl method via reflection
+        Method crawlMethod = crawler.getClass().getDeclaredMethod("crawl", String.class);
+        crawlMethod.setAccessible(true);
+
+        // Invoke the crawl method and expect it to handle IOException internally
+        crawlMethod.invoke(crawler, EXAMPLE_URL);
+
+        assertEquals(1, crawler.getUrlCache().size());
+        assertTrue(crawler.getUrlCache().contains("https://example.com"));
+        assertFalse(crawler.getUrlCache().contains("https://example.com/page2"));
     }
 }

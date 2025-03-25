@@ -76,7 +76,7 @@ public class SimpleWebCrawler {
             Document doc = webClient.fetch(url);
             Elements links = doc.select("a[href]");
             links.forEach(this::normaliseAndEnqueue);
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Failed to crawl: {}", url, e);
         }
     }
