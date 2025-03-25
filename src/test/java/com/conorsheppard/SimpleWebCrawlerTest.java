@@ -21,6 +21,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.conorsheppard.crawler.SimpleWebCrawler.normalizeUrl;
 import static org.junit.jupiter.api.Assertions.*;
@@ -236,19 +237,47 @@ class SimpleWebCrawlerTest {
     @SneakyThrows
     @Test
     void testCrawlUsesThreadPool() {
-        ExecutorService mockExecutor = mock(ExecutorService.class);
-        WebClient mockWebClient = mock(WebClient.class);
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        ExecutorService spyExecutor = spy(realExecutor);
 
-        UrlQueue queue = new ConcurrentQueue();
-        UrlCache cache = new InMemoryUrlCache();
-
-        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(EXAMPLE_URL, queue, cache,
-                mockExecutor, TerminalBuilder.terminal(), mockWebClient
+        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(
+                EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
+                spyExecutor, TerminalBuilder.terminal(), mockWebClient
         );
 
-        queue.enqueue(EXAMPLE_URL);
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("application/json");
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+
         simpleWebCrawler.crawl();
 
-        verify(mockExecutor, atLeastOnce()).submit(any(Runnable.class));
+        verify(spyExecutor, atLeastOnce()).submit(any(Runnable.class));
+        verify(spyExecutor).shutdown();
+        verify(spyExecutor, atLeastOnce()).awaitTermination(anyLong(), any(TimeUnit.class));
     }
+
+    @Test
+    void testWhenShutDown_executorAwaitsTermination() throws InterruptedException, IOException {
+        // Create a mock executor service
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+
+        // Simulate two iterations before terminating
+        when(mockExecutor.awaitTermination(anyLong(), any(TimeUnit.class)))
+                .thenReturn(false) // First iteration (while loop continues)
+                .thenReturn(true); // Second iteration (loop exits)
+
+        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(EXAMPLE_URL, new ConcurrentQueue(),
+                new InMemoryUrlCache(), mockExecutor, TerminalBuilder.terminal(), mockWebClient
+        );
+
+        // Call shutdownAndAwait
+        simpleWebCrawler.shutdownAndAwait();
+
+        // Verify shutdown() was called
+        verify(mockExecutor).shutdown();
+
+        // Verify awaitTermination() was called at least twice (loop runs)
+        verify(mockExecutor, times(2)).awaitTermination(anyLong(), any(TimeUnit.class));
+    }
+
 }
