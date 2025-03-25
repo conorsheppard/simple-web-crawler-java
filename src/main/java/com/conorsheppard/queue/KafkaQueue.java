@@ -1,4 +1,6 @@
 package com.conorsheppard.queue;
+
+import lombok.SneakyThrows;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -7,26 +9,18 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 
+import static com.conorsheppard.config.KafkaConfig.loadKafkaProperties;
+
 public class KafkaQueue implements UrlQueue {
     private static final String TOPIC = "web-crawler-urls";
     private final KafkaProducer<String, String> producer;
     private final KafkaConsumer<String, String> consumer;
 
-    public KafkaQueue(String bootstrapServers) {
-        // Kafka Producer Properties
-        Properties producerProps = new Properties();
-        producerProps.put("bootstrap.servers", bootstrapServers);
-        producerProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    @SneakyThrows
+    public KafkaQueue() {
+        Properties producerProps = loadKafkaProperties("kafka-producer.properties");
+        Properties consumerProps = loadKafkaProperties("kafka-consumer.properties");
         producer = new KafkaProducer<>(producerProps);
-
-        // Kafka Consumer Properties
-        Properties consumerProps = new Properties();
-        consumerProps.put("bootstrap.servers", bootstrapServers);
-        consumerProps.put("group.id", "crawler-group");
-        consumerProps.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerProps.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerProps.put("auto.offset.reset", "earliest");
         consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Collections.singleton(TOPIC));
     }

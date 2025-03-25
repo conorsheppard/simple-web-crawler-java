@@ -64,7 +64,7 @@ public class Application implements Callable<Integer> {
     }
 
     private UrlQueue getQueue() {
-        return isKafka() ? new KafkaQueue("localhost:9092") : new ConcurrentQueue();
+        return isKafka() ? new KafkaQueue() : new ConcurrentQueue();
     }
 
     private UrlCache getCache() {
