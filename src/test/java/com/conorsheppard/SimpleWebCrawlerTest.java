@@ -19,6 +19,7 @@ import org.mockito.MockitoAnnotations;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URISyntaxException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -104,6 +105,8 @@ class SimpleWebCrawlerTest {
 
         assertEquals("https://monzo.com/supporting customers",
                 normalizeUrl("https://monzo.com/supporting customers"));
+
+        assertThrows(URISyntaxException.class, () -> normalizeUrl("http://exa<mple.com"));
     }
 
     // This test is more about ensuring the logic is correct rather than testing the queue itself
@@ -256,8 +259,9 @@ class SimpleWebCrawlerTest {
         verify(spyExecutor, atLeastOnce()).awaitTermination(anyLong(), any(TimeUnit.class));
     }
 
+    @SneakyThrows
     @Test
-    void testWhenShutDown_executorAwaitsTermination() throws InterruptedException, IOException {
+    void testWhenShutDown_executorAwaitsTermination() {
         // Create a mock executor service
         ExecutorService mockExecutor = mock(ExecutorService.class);
 
@@ -280,4 +284,31 @@ class SimpleWebCrawlerTest {
         verify(mockExecutor, times(2)).awaitTermination(anyLong(), any(TimeUnit.class));
     }
 
+    @SneakyThrows
+    @Test
+    void testShutdownAndAwaitHandlesInterruptedException() {
+        // Create a mock executor service
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+
+        // Simulate an InterruptedException
+        when(mockExecutor.awaitTermination(anyLong(), any(TimeUnit.class)))
+                .thenThrow(new InterruptedException());
+
+        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(
+                EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
+                mockExecutor, TerminalBuilder.terminal(), mockWebClient
+        );
+
+        // Call shutdownAndAwait
+        simpleWebCrawler.shutdownAndAwait();
+
+        // Verify shutdown() was called
+        verify(mockExecutor).shutdown();
+
+        // Verify awaitTermination() was called at least once
+        verify(mockExecutor, atLeastOnce()).awaitTermination(anyLong(), any(TimeUnit.class));
+
+        // Verify that the interrupted flag was set on the current thread
+        assertTrue(Thread.currentThread().isInterrupted());
+    }
 }
