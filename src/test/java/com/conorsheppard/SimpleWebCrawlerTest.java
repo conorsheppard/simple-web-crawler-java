@@ -6,22 +6,17 @@ import com.conorsheppard.crawler.SimpleWebCrawler;
 import com.conorsheppard.queue.ConcurrentQueue;
 import com.conorsheppard.queue.UrlQueue;
 import com.conorsheppard.web.WebClient;
-import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
-import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jsoup.Connection;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutorService;
@@ -30,9 +25,12 @@ import java.util.concurrent.Executors;
 import static com.conorsheppard.crawler.SimpleWebCrawler.normalizeUrl;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class SimpleWebCrawlerTest {
     private SimpleWebCrawler crawler;
+    private static final String EXAMPLE_URL = "https://example.com";
 
     @Mock
     private WebClient mockWebClient;
@@ -41,14 +39,14 @@ class SimpleWebCrawlerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        crawler = new SimpleWebCrawler("https://example.com", new ConcurrentQueue(), new InMemoryUrlCache(),
+        crawler = new SimpleWebCrawler(EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
                 Executors.newSingleThreadExecutor(), TerminalBuilder.terminal(), mockWebClient);
     }
 
     @Test
     void testConstructor() {
         assertEquals("example.com", crawler.getBaseDomain());
-        assertTrue(crawler.getUrlQueue().contains("https://example.com"));
+        assertTrue(crawler.getUrlQueue().contains(EXAMPLE_URL));
     }
 
     @Test
@@ -60,15 +58,20 @@ class SimpleWebCrawlerTest {
         assertNull(crawler.getDomain("invalid-url"));
     }
 
-    @Test
-    void testIsValidUrl() {
-        assertFalse(crawler.isValidUrl("example.com"));
-        assertTrue(crawler.isValidUrl("http://example.com")); // Non-HTTPS
-        assertTrue(crawler.isValidUrl("https://example.com")); // Base URL
-        assertTrue(crawler.isValidUrl("https://example.com/page"));
-        assertFalse(crawler.isValidUrl("https://other.com/page")); // Different domain
-        assertFalse(crawler.isValidUrl("ftp://example.com/file")); // Non-HTTP
-        assertFalse(crawler.isValidUrl("https://subdomain.example.org")); // Subdomain
+
+    @ParameterizedTest
+    @CsvSource({
+            "'example.com', false",
+            "'http://example.com', true",
+            "'https://example.com', true",
+            "'https://example.com/page', true",
+            "'https://other.com/page', false",
+            "'ftp://example.com/file', false",
+            "'https://subdomain.example.org', false"
+    })
+    @DisplayName("Test for validation of URLs, i.e. starts with 'http', includes the base domain and is not an ignored file type")
+    void testIsValidUrl(String url, boolean expected) {
+        assertEquals(expected, crawler.isValidUrl(url));
     }
 
     @Test
@@ -178,8 +181,8 @@ class SimpleWebCrawlerTest {
     void testWhenResponseIsJson_isHtmlContentReturnsFalse() {
         Connection.Response mockResponse = mock(Connection.Response.class);
         when(mockResponse.contentType()).thenReturn("application/json");
-        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
-        assertFalse(crawler.isHtmlContent("https://example.com"));
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent(EXAMPLE_URL));
     }
 
     @SneakyThrows
@@ -187,8 +190,8 @@ class SimpleWebCrawlerTest {
     void testWhenResponseIsNull_isHtmlContentReturnsFalse() {
         Connection.Response mockResponse = mock(Connection.Response.class);
         when(mockResponse.contentType()).thenReturn(null);
-        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
-        assertFalse(crawler.isHtmlContent("https://example.com"));
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent(EXAMPLE_URL));
     }
 
     @SneakyThrows
@@ -196,12 +199,12 @@ class SimpleWebCrawlerTest {
     void testWhenOnceLinkExistsInThePage_FetchIsCalledOnce() {
         Connection.Response mockResponse = mock(Connection.Response.class);
         when(mockResponse.contentType()).thenReturn("text/html");
-        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
         Document mockFetchResponse = mock(Document.class);
         when(mockResponse.body()).thenReturn("<html><body><a href='https://example.com/page2'>Next</a></body></html>");
-        when(mockWebClient.fetch("https://example.com")).thenReturn(mockFetchResponse);
+        when(mockWebClient.fetch(EXAMPLE_URL)).thenReturn(mockFetchResponse);
         crawler.crawl();
-        verify(mockWebClient, times(1)).fetch("https://example.com");
+        verify(mockWebClient, times(1)).fetch(EXAMPLE_URL);
     }
 
 
@@ -210,8 +213,8 @@ class SimpleWebCrawlerTest {
     void testWhenResponseIsEmpty_isHtmlContentReturnsFalse() {
         Connection.Response mockResponse = mock(Connection.Response.class);
         when(mockResponse.contentType()).thenReturn("");
-        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
-        assertFalse(crawler.isHtmlContent("https://example.com"));
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent(EXAMPLE_URL));
     }
 
     @SneakyThrows
@@ -219,33 +222,33 @@ class SimpleWebCrawlerTest {
     void testWhenResponseIsValid_isHtmlContentReturnsTrue() {
         Connection.Response mockResponse = mock(Connection.Response.class);
         when(mockResponse.contentType()).thenReturn("text/html; charset=UTF-8");
-        when(mockWebClient.head("https://example.com")).thenReturn(mockResponse);
-        assertTrue(crawler.isHtmlContent("https://example.com"));
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+        assertTrue(crawler.isHtmlContent(EXAMPLE_URL));
     }
 
     @SneakyThrows
     @Test
     void testWhenWebClientThrowsIOException_isHtmlContentCatchesAndReturnsFalse() {
-        when(mockWebClient.head("https://example.com")).thenThrow(new IOException());
-        assertFalse(crawler.isHtmlContent("https://example.com"));
+        when(mockWebClient.head(EXAMPLE_URL)).thenThrow(new IOException());
+        assertFalse(crawler.isHtmlContent(EXAMPLE_URL));
     }
 
-//    @Test
-//    void testCrawlUsesThreadPool() {
-//        ExecutorService mockExecutor = mock(ExecutorService.class);
-//        WebClient mockWebClient = mock(WebClient.class);
-//
-//        UrlQueue queue = new ConcurrentQueue();
-//        UrlCache cache = new InMemoryUrlCache();
-//
-//        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(
-//                "https://example.com", queue, cache,
-//                mockExecutor, new ProgressBarStub(), mockWebClient
-//        );
-//
-//        queue.enqueue("https://example.com");
-//        simpleWebCrawler.crawl();
-//
-//        verify(mockExecutor, atLeastOnce()).submit(any(Runnable.class));
-//    }
+    @SneakyThrows
+    @Test
+    void testCrawlUsesThreadPool() {
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+        WebClient mockWebClient = mock(WebClient.class);
+
+        UrlQueue queue = new ConcurrentQueue();
+        UrlCache cache = new InMemoryUrlCache();
+
+        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(EXAMPLE_URL, queue, cache,
+                mockExecutor, TerminalBuilder.terminal(), mockWebClient
+        );
+
+        queue.enqueue(EXAMPLE_URL);
+        simpleWebCrawler.crawl();
+
+        verify(mockExecutor, atLeastOnce()).submit(any(Runnable.class));
+    }
 }
