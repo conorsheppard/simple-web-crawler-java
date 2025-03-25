@@ -10,6 +10,8 @@ import lombok.SneakyThrows;
 import org.jline.terminal.TerminalBuilder;
 import org.jsoup.Connection;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -70,7 +73,8 @@ class SimpleWebCrawlerTest {
             "'https://example.com/page', true",
             "'https://other.com/page', false",
             "'ftp://example.com/file', false",
-            "'https://subdomain.example.org', false"
+            "'https://subdomain.example.org', false",
+            "'https://example.com/example.pdf', false"
     })
     @DisplayName("Test for validation of URLs, i.e. starts with 'http', includes the base domain and is not an ignored file type")
     void testIsValidUrl(String url, boolean expected) {
@@ -205,11 +209,17 @@ class SimpleWebCrawlerTest {
         Connection.Response mockResponse = mock(Connection.Response.class);
         when(mockResponse.contentType()).thenReturn("text/html");
         when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
-        Document mockFetchResponse = mock(Document.class);
+
+        Document mockDocument = mock(Document.class);
+        Element element = new Element("a");
+        element.attr("href", "https://example.com/page2");
+        when(mockDocument.select("a[href]")).thenReturn(new Elements(List.of(element)));
+
         when(mockResponse.body()).thenReturn("<html><body><a href='https://example.com/page2'>Next</a></body></html>");
-        when(mockWebClient.fetch(EXAMPLE_URL)).thenReturn(mockFetchResponse);
+        when(mockWebClient.fetch(EXAMPLE_URL)).thenReturn(mockDocument);
         crawler.crawl();
         verify(mockWebClient, times(1)).fetch(EXAMPLE_URL);
+        assertTrue(crawler.getUrlCache().contains("https://example.com/page2"));
     }
 
 
