@@ -58,6 +58,7 @@ class SimpleWebCrawlerTest {
         assertEquals("sub.example.com", crawler.getDomain("https://sub.example.com"));
         assertNotEquals("example.com", crawler.getDomain("https://other.com"));
         assertNull(crawler.getDomain("invalid-url"));
+        assertEquals("", crawler.getDomain("http://exa<mple.com"));
     }
 
 
