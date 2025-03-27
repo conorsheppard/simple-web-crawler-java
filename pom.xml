@@ -91,6 +91,12 @@
             <artifactId>jline</artifactId>
             <version>3.29.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.wiremock</groupId>
+            <artifactId>wiremock</artifactId>
+            <version>3.12.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
