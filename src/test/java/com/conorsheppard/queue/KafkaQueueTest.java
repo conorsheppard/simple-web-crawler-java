@@ -1,6 +1,5 @@
-package com.conorsheppard;
+package com.conorsheppard.queue;
 
-import com.conorsheppard.queue.KafkaQueue;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;

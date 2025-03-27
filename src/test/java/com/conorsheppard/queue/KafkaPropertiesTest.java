@@ -1,7 +1,6 @@
-package com.conorsheppard;
+package com.conorsheppard.queue;
 
 import com.conorsheppard.config.KafkaConfig;
-import com.conorsheppard.queue.KafkaQueue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
