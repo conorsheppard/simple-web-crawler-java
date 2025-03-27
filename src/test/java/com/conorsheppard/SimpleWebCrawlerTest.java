@@ -82,32 +82,32 @@ class SimpleWebCrawlerTest {
     @Test
     void testNormalizeUrl() {
         // URLs with and without fragments should be treated the same
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-customers/#mainContent"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-customers/#mainContent"));
 
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-customers#"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-customers#"));
 
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-customers"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-customers"));
 
         // URLs with and without trailing slashes should be treated the same
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-customers/"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-customers/"));
 
         // Test multiple trailing slashes
         assertEquals("https://example.com/page",
                 SimpleWebCrawler.normalizeUrl("https://example.com/page///"));
 
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-Customers/"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-Customers/"));
 
         // Ensure different paths are not mistakenly treated as the same
-        assertNotEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/another-path"));
+        assertNotEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/another-path"));
 
-        assertEquals("https://monzo.com/supporting customers",
-                normalizeUrl("https://monzo.com/supporting customers"));
+        assertEquals("https://example.com/supporting customers",
+                normalizeUrl("https://example.com/supporting customers"));
 
         assertThrows(URISyntaxException.class, () -> normalizeUrl("http://exa<mple.com"));
     }

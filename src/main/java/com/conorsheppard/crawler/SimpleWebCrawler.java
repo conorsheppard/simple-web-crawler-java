@@ -137,7 +137,6 @@ public class SimpleWebCrawler {
         return lowerUrl.matches(".*\\.(pdf|jpg|png|gif|mp4|zip|exe|docx|xlsx|pptx|mp3)(\\?.*)?$");
     }
 
-
     public String getDomain(String url) {
         try {
             return new URI(url).getHost();

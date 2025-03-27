@@ -1,5 +1,6 @@
 package com.conorsheppard.queue;
 
+import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -11,8 +12,9 @@ import java.util.Properties;
 
 import static com.conorsheppard.config.KafkaConfig.loadKafkaProperties;
 
+@Data
 public class KafkaQueue implements UrlQueue {
-    private static final String TOPIC = "web-crawler-urls";
+    public static final String TOPIC = "web-crawler-urls";
     private final KafkaProducer<String, String> producer;
     private final KafkaConsumer<String, String> consumer;
 

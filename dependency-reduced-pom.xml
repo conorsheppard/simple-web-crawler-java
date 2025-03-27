@@ -102,6 +102,7 @@
         <configuration>
           <excludes>
             <exclude>com/conorsheppard/Application.class</exclude>
+            <exclude>com/conorsheppard/config/KafkaConfig.class</exclude>
           </excludes>
         </configuration>
       </plugin>
