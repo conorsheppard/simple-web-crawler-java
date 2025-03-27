@@ -29,12 +29,12 @@ public class KafkaQueue implements UrlQueue {
 
     @Override
     public void enqueue(String url) {
-        producer.send(new ProducerRecord<>(TOPIC, url));
+        this.getProducer().send(new ProducerRecord<>(TOPIC, url));
     }
 
     @Override
     public String dequeue() {
-        var records = consumer.poll(Duration.ofMillis(100));
+        var records = this.getConsumer().poll(Duration.ofMillis(100));
         return records.isEmpty() ? null : records.iterator().next().value();
     }
 
