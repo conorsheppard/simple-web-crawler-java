@@ -1,17 +1,16 @@
 package com.conorsheppard.cache;
 
-import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
+import lombok.Data;
 
+@Data
 public class RedisUrlCache implements UrlCache {
     private final RedisCommands<String, String> redis;
     private static final String VISITED_URLS = "web-crawler-url-cache";
 
-    public RedisUrlCache(String redisUrl) {
-        RedisClient client = RedisClient.create(redisUrl);
-        StatefulRedisConnection<String, String> connection = client.connect();
-        this.redis = connection.sync();
+    public RedisUrlCache(StatefulRedisConnection<String, String> redisCommands) {
+        this.redis = redisCommands.sync();
     }
 
     @Override

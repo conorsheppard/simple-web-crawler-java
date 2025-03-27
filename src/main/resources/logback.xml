@@ -5,6 +5,8 @@
     <logger name="ch.qos.logback.classic" level="ERROR"/>
     <logger name="ch.qos.logback.core" level="ERROR"/>
 
+    <logger name="net.bytebuddy" level="ERROR"/>
+
     <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

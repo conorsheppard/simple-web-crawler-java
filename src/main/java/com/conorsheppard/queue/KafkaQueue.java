@@ -1,5 +1,6 @@
 package com.conorsheppard.queue;
 
+import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -11,8 +12,9 @@ import java.util.Properties;
 
 import static com.conorsheppard.config.KafkaConfig.loadKafkaProperties;
 
+@Data
 public class KafkaQueue implements UrlQueue {
-    private static final String TOPIC = "web-crawler-urls";
+    public static final String TOPIC = "web-crawler-urls";
     private final KafkaProducer<String, String> producer;
     private final KafkaConsumer<String, String> consumer;
 
@@ -27,12 +29,12 @@ public class KafkaQueue implements UrlQueue {
 
     @Override
     public void enqueue(String url) {
-        producer.send(new ProducerRecord<>(TOPIC, url));
+        this.getProducer().send(new ProducerRecord<>(TOPIC, url));
     }
 
     @Override
     public String dequeue() {
-        var records = consumer.poll(Duration.ofMillis(100));
+        var records = this.getConsumer().poll(Duration.ofMillis(100));
         return records.isEmpty() ? null : records.iterator().next().value();
     }
 

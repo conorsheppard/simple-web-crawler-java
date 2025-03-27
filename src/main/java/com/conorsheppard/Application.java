@@ -7,15 +7,20 @@ import com.conorsheppard.crawler.SimpleWebCrawler;
 import com.conorsheppard.queue.ConcurrentQueue;
 import com.conorsheppard.queue.KafkaQueue;
 import com.conorsheppard.queue.UrlQueue;
+import com.conorsheppard.web.JSoupWebClient;
+import io.lettuce.core.RedisClient;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jline.terminal.TerminalBuilder;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
 import java.util.Scanner;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
 
-import static picocli.CommandLine.*;
+import static picocli.CommandLine.Parameters;
 
 @Slf4j
 @Command(name = "WebCrawler", mixinStandardHelpOptions = true, version = "1.0",
@@ -34,13 +39,15 @@ public class Application implements Callable<Integer> {
     @Option(names = {"-t", "--threads"}, description = "Max number of threads", defaultValue = "30")
     private int maxThreads;
 
+    @SneakyThrows
     @Override
     public Integer call() {
         getBaseURL();
         if (baseURL.isEmpty()) return 1;
         UrlQueue queue = getQueue();
         UrlCache cache = getCache();
-        SimpleWebCrawler crawler = new SimpleWebCrawler(baseURL, queue, cache, maxThreads);
+        SimpleWebCrawler crawler = new SimpleWebCrawler(baseURL, queue, cache, Executors.newFixedThreadPool(maxThreads),
+                TerminalBuilder.terminal(), new JSoupWebClient());
         logCrawlerInfo();
         crawler.crawl();
         return 0;
@@ -68,7 +75,8 @@ public class Application implements Callable<Integer> {
     }
 
     private UrlCache getCache() {
-        return isRedis() ? new RedisUrlCache("redis://localhost:6379") : new InMemoryUrlCache();
+        return isRedis() ? new RedisUrlCache(RedisClient.create("redis://localhost:6379").connect())
+                : new InMemoryUrlCache();
     }
 
     public void logCrawlerInfo() {

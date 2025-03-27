@@ -2,13 +2,12 @@ package com.conorsheppard.crawler;
 
 import com.conorsheppard.cache.UrlCache;
 import com.conorsheppard.queue.UrlQueue;
+import com.conorsheppard.web.WebClient;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 import org.jsoup.Connection;
-import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -25,19 +24,20 @@ public class SimpleWebCrawler {
     private final ExecutorService executor;
     private final UrlQueue urlQueue;
     private final UrlCache urlCache;
-    private final Set<String> visitedUrls = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    private final Set<String> visitedUrlSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private static final AtomicInteger activeCrawlers = new AtomicInteger(0);
     private final String baseDomain;
     private final Terminal terminal;
+    private final WebClient webClient;
 
-
-    @SneakyThrows
-    public SimpleWebCrawler(String startUrl, UrlQueue urlQueue, UrlCache urlCache, int maxThreads) {
-        this.executor = Executors.newFixedThreadPool(maxThreads);
+    public SimpleWebCrawler(String startUrl, UrlQueue urlQueue, UrlCache urlCache,
+                            ExecutorService executor, Terminal terminal, WebClient webClient) {
+        this.executor = executor;
         this.urlQueue = urlQueue;
         this.urlCache = urlCache;
         this.baseDomain = getDomain(startUrl);
-        this.terminal = TerminalBuilder.terminal();
+        this.terminal = terminal;
+        this.webClient = webClient;
         enqueueUrl(normalizeUrl(startUrl));
 
         startProgressBar();
@@ -65,7 +65,7 @@ public class SimpleWebCrawler {
     }
 
     private void crawl(String url) {
-        if (!visitedUrls.add(url)) return;
+        if (!visitedUrlSet.add(url)) return;
 
         if (!isHtmlContent(url)) {
             log.debug("Skipping non-HTML URL: {}", url);
@@ -73,10 +73,10 @@ public class SimpleWebCrawler {
         }
 
         try {
-            Document doc = Jsoup.connect(url).timeout(5000).get();
+            Document doc = webClient.fetch(url);
             Elements links = doc.select("a[href]");
             links.forEach(this::normaliseAndEnqueue);
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Failed to crawl: {}", url, e);
         }
     }
@@ -94,7 +94,7 @@ public class SimpleWebCrawler {
     void writeProgress() {
         while (!executor.isShutdown()) {
             Thread.sleep(500); // Refresh every 500ms
-            int scraped = visitedUrls.size();
+            int scraped = visitedUrlSet.size();
             int discovered = urlCache.size();
             int percentage = (discovered == 0) ? 0 : (scraped * 100) / discovered;
 
@@ -117,7 +117,7 @@ public class SimpleWebCrawler {
 
     public boolean isHtmlContent(String url) {
         try {
-            Connection.Response response = Jsoup.connect(url).method(Connection.Method.HEAD).execute();
+            Connection.Response response = webClient.head(url);
             String contentType = response.contentType();
             return contentType != null && contentType.startsWith("text/html");
         } catch (IOException e) {
@@ -136,7 +136,6 @@ public class SimpleWebCrawler {
         String lowerUrl = url.toLowerCase();
         return lowerUrl.matches(".*\\.(pdf|jpg|png|gif|mp4|zip|exe|docx|xlsx|pptx|mp3)(\\?.*)?$");
     }
-
 
     public String getDomain(String url) {
         try {

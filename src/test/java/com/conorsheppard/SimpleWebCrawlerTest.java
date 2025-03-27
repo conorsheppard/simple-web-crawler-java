@@ -3,18 +3,29 @@ package com.conorsheppard;
 import com.conorsheppard.cache.InMemoryUrlCache;
 import com.conorsheppard.crawler.SimpleWebCrawler;
 import com.conorsheppard.queue.ConcurrentQueue;
+import com.conorsheppard.web.WebClient;
 import lombok.SneakyThrows;
+import org.jline.terminal.TerminalBuilder;
 import org.jsoup.Connection;
-import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URISyntaxException;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.conorsheppard.crawler.SimpleWebCrawler.normalizeUrl;
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,17 +33,23 @@ import static org.mockito.Mockito.*;
 
 class SimpleWebCrawlerTest {
     private SimpleWebCrawler crawler;
+    private static final String EXAMPLE_URL = "https://example.com";
+
+    @Mock
+    private WebClient mockWebClient;
 
     @SneakyThrows
     @BeforeEach
     void setUp() {
-        crawler = new SimpleWebCrawler("https://example.com", new ConcurrentQueue(), new InMemoryUrlCache(), 30);
+        MockitoAnnotations.openMocks(this);
+        crawler = new SimpleWebCrawler(EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
+                Executors.newSingleThreadExecutor(), TerminalBuilder.terminal(), mockWebClient);
     }
 
     @Test
     void testConstructor() {
         assertEquals("example.com", crawler.getBaseDomain());
-        assertTrue(crawler.getUrlQueue().contains("https://example.com"));
+        assertTrue(crawler.getUrlQueue().contains(EXAMPLE_URL));
     }
 
     @Test
@@ -42,48 +59,57 @@ class SimpleWebCrawlerTest {
         assertEquals("sub.example.com", crawler.getDomain("https://sub.example.com"));
         assertNotEquals("example.com", crawler.getDomain("https://other.com"));
         assertNull(crawler.getDomain("invalid-url"));
+        assertEquals("", crawler.getDomain("http://exa<mple.com"));
     }
 
-    @Test
-    void testIsValidUrl() {
-        assertFalse(crawler.isValidUrl("example.com"));
-        assertTrue(crawler.isValidUrl("http://example.com")); // Non-HTTPS
-        assertTrue(crawler.isValidUrl("https://example.com")); // Base URL
-        assertTrue(crawler.isValidUrl("https://example.com/page"));
-        assertFalse(crawler.isValidUrl("https://other.com/page")); // Different domain
-        assertFalse(crawler.isValidUrl("ftp://example.com/file")); // Non-HTTP
-        assertFalse(crawler.isValidUrl("https://subdomain.example.org")); // Subdomain
+
+    @ParameterizedTest
+    @CsvSource({
+            "'example.com', false",
+            "'http://example.com', true",
+            "'https://example.com', true",
+            "'https://example.com/page', true",
+            "'https://other.com/page', false",
+            "'ftp://example.com/file', false",
+            "'https://subdomain.example.org', false",
+            "'https://example.com/example.pdf', false"
+    })
+    @DisplayName("Test for validation of URLs, i.e. starts with 'http', includes the base domain and is not an ignored file type")
+    void testIsValidUrl(String url, boolean expected) {
+        assertEquals(expected, crawler.isValidUrl(url));
     }
 
     @Test
     void testNormalizeUrl() {
         // URLs with and without fragments should be treated the same
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-customers/#mainContent"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-customers/#mainContent"));
 
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-customers#"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-customers#"));
 
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-customers"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-customers"));
 
         // URLs with and without trailing slashes should be treated the same
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-customers/"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-customers/"));
 
         // Test multiple trailing slashes
         assertEquals("https://example.com/page",
                 SimpleWebCrawler.normalizeUrl("https://example.com/page///"));
 
-        assertEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/supporting-Customers/"));
+        assertEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/supporting-Customers/"));
 
         // Ensure different paths are not mistakenly treated as the same
-        assertNotEquals("https://monzo.com/supporting-customers",
-                normalizeUrl("https://monzo.com/another-path"));
+        assertNotEquals("https://example.com/supporting-customers",
+                normalizeUrl("https://example.com/another-path"));
 
-        assertEquals("https://monzo.com/supporting customers",
-                normalizeUrl("https://monzo.com/supporting customers"));
+        assertEquals("https://example.com/supporting customers",
+                normalizeUrl("https://example.com/supporting customers"));
+
+        assertThrows(URISyntaxException.class, () -> normalizeUrl("http://exa<mple.com"));
     }
 
     // This test is more about ensuring the logic is correct rather than testing the queue itself
@@ -98,7 +124,7 @@ class SimpleWebCrawlerTest {
 
         // Access the private method using reflection
         Method enqueueUrlMethod = crawler.getClass().getDeclaredMethod("enqueueUrl", String.class);
-        enqueueUrlMethod.setAccessible(true); // This allows access to the private method
+        enqueueUrlMethod.setAccessible(true);
 
         // Invoke the private method
         enqueueUrlMethod.invoke(crawler, "https://example.com/new-page");
@@ -120,7 +146,7 @@ class SimpleWebCrawlerTest {
     @Test
     void testVisitedUrlsHandling() {
         // Add URL to visited set
-        crawler.getVisitedUrls().add("https://example.com/visited");
+        crawler.getVisitedUrlSet().add("https://example.com/visited");
 
         Method crawlMethod = crawler.getClass().getDeclaredMethod("enqueueUrl", String.class);
         crawlMethod.setAccessible(true); // This allows access to the private method
@@ -130,7 +156,7 @@ class SimpleWebCrawlerTest {
 
         // Verify visited URL was not processed again
         // crawler is already seeded with https://example.com + this one (https://example.com/visited) == 2
-        assertEquals(1, crawler.getVisitedUrls().size());
+        assertEquals(1, crawler.getVisitedUrlSet().size());
     }
 
     @Test
@@ -157,41 +183,170 @@ class SimpleWebCrawlerTest {
         assertTrue(executorSpy.isShutdown());
     }
 
+    @SneakyThrows
     @Test
-    void testIsHtmlContent() throws IOException {
-        // Setup mock for Jsoup
-        Connection mockConnection = mock(Connection.class);
+    void testWhenResponseIsJson_isHtmlContentReturnsFalse() {
         Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("application/json");
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent(EXAMPLE_URL));
+    }
 
-        try (MockedStatic<Jsoup> jsoupMock = Mockito.mockStatic(Jsoup.class)) {
-            jsoupMock.when(() -> Jsoup.connect(anyString())).thenReturn(mockConnection);
-            when(mockConnection.method(any(Connection.Method.class))).thenReturn(mockConnection);
-            when(mockConnection.execute()).thenReturn(mockResponse);
+    @SneakyThrows
+    @Test
+    void testWhenResponseIsNull_isHtmlContentReturnsFalse() {
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn(null);
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent(EXAMPLE_URL));
+    }
 
-            // Test HTML content
-            when(mockResponse.contentType()).thenReturn("text/html; charset=UTF-8");
-            assertTrue(crawler.isHtmlContent("https://example.com"));
+    @SneakyThrows
+    @Test
+    void testWhenOnceLinkExistsInThePage_FetchIsCalledOnce() {
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("text/html");
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
 
-            // Test non-HTML content
-            when(mockResponse.contentType()).thenReturn("application/pdf");
-            assertFalse(crawler.isHtmlContent("https://example.com/document.pdf"));
+        Document mockDocument = mock(Document.class);
+        Element element = new Element("a");
+        element.attr("href", "https://example.com/page2");
+        when(mockDocument.select("a[href]")).thenReturn(new Elements(List.of(element)));
 
-            // Test null content type
-            when(mockResponse.contentType()).thenReturn(null);
-            assertFalse(crawler.isHtmlContent("https://example.com/unknown"));
-        }
+        when(mockResponse.body()).thenReturn("<html><body><a href='https://example.com/page2'>Next</a></body></html>");
+        when(mockWebClient.fetch(EXAMPLE_URL)).thenReturn(mockDocument);
+        crawler.crawl();
+        verify(mockWebClient, times(1)).fetch(EXAMPLE_URL);
+        assertTrue(crawler.getUrlCache().contains("https://example.com/page2"));
+    }
+
+
+    @SneakyThrows
+    @Test
+    void testWhenResponseIsEmpty_isHtmlContentReturnsFalse() {
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("");
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+        assertFalse(crawler.isHtmlContent(EXAMPLE_URL));
+    }
+
+    @SneakyThrows
+    @Test
+    void testWhenResponseIsValid_isHtmlContentReturnsTrue() {
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("text/html; charset=UTF-8");
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+        assertTrue(crawler.isHtmlContent(EXAMPLE_URL));
+    }
+
+    @SneakyThrows
+    @Test
+    void testWhenWebClientThrowsIOException_isHtmlContentCatchesAndReturnsFalse() {
+        when(mockWebClient.head(EXAMPLE_URL)).thenThrow(new IOException());
+        assertFalse(crawler.isHtmlContent(EXAMPLE_URL));
+    }
+
+    @SneakyThrows
+    @Test
+    void testCrawlUsesThreadPool() {
+        ExecutorService realExecutor = Executors.newSingleThreadExecutor();
+        ExecutorService spyExecutor = spy(realExecutor);
+
+        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(
+                EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
+                spyExecutor, TerminalBuilder.terminal(), mockWebClient
+        );
+
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("application/json");
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+
+        simpleWebCrawler.crawl();
+
+        verify(spyExecutor, atLeastOnce()).submit(any(Runnable.class));
+        verify(spyExecutor).shutdown();
+        verify(spyExecutor, atLeastOnce()).awaitTermination(anyLong(), any(TimeUnit.class));
+    }
+
+    @SneakyThrows
+    @Test
+    void testWhenShutDown_executorAwaitsTermination() {
+        // Create a mock executor service
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+
+        // Simulate two iterations before terminating
+        when(mockExecutor.awaitTermination(anyLong(), any(TimeUnit.class)))
+                .thenReturn(false) // First iteration (while loop continues)
+                .thenReturn(true); // Second iteration (loop exits)
+
+        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(EXAMPLE_URL, new ConcurrentQueue(),
+                new InMemoryUrlCache(), mockExecutor, TerminalBuilder.terminal(), mockWebClient
+        );
+
+        // Call shutdownAndAwait
+        simpleWebCrawler.shutdownAndAwait();
+
+        // Verify shutdown() was called
+        verify(mockExecutor).shutdown();
+
+        // Verify awaitTermination() was called at least twice (loop runs)
+        verify(mockExecutor, times(2)).awaitTermination(anyLong(), any(TimeUnit.class));
+    }
+
+    @SneakyThrows
+    @Test
+    void testShutdownAndAwaitHandlesInterruptedException() {
+        // Create a mock executor service
+        ExecutorService mockExecutor = mock(ExecutorService.class);
+
+        // Simulate an InterruptedException
+        when(mockExecutor.awaitTermination(anyLong(), any(TimeUnit.class)))
+                .thenThrow(new InterruptedException());
+
+        SimpleWebCrawler simpleWebCrawler = new SimpleWebCrawler(
+                EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
+                mockExecutor, TerminalBuilder.terminal(), mockWebClient
+        );
+
+        // Call shutdownAndAwait
+        simpleWebCrawler.shutdownAndAwait();
+
+        // Verify shutdown() was called
+        verify(mockExecutor).shutdown();
+
+        // Verify awaitTermination() was called at least once
+        verify(mockExecutor, atLeastOnce()).awaitTermination(anyLong(), any(TimeUnit.class));
+
+        // Verify that the interrupted flag was set on the current thread
+        assertTrue(Thread.currentThread().isInterrupted());
     }
 
     @Test
-    void testIsHtmlContentWithException() throws IOException {
-        // Set up mock for Jsoup that throws exception
-        try (MockedStatic<Jsoup> jsoupMock = Mockito.mockStatic(Jsoup.class)) {
-            Connection mockConnection = mock(Connection.class);
-            jsoupMock.when(() -> Jsoup.connect(anyString())).thenReturn(mockConnection);
-            when(mockConnection.method(any(Connection.Method.class))).thenReturn(mockConnection);
-            when(mockConnection.execute()).thenThrow(new IOException("Connection failed"));
+    void testCrawlHandlesIOException1() throws Exception {
+        // Set up the spy with the real crawler instance
+        crawler = new SimpleWebCrawler(EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
+                Executors.newSingleThreadExecutor(), TerminalBuilder.terminal(), mockWebClient);
 
-            assertFalse(crawler.isHtmlContent("https://example.com/error"));
-        }
+        Connection.Response mockResponse = mock(Connection.Response.class);
+        when(mockResponse.contentType()).thenReturn("text/html");
+        when(mockWebClient.head(EXAMPLE_URL)).thenReturn(mockResponse);
+
+        Document mockDocument = mock(Document.class);
+        Element element = new Element("a");
+        element.attr("href", "https://example.com/page2");
+        when(mockDocument.select("a[href]")).thenReturn(new Elements(List.of(element)));
+        // Simulate an IOException during web client fetch
+        when(mockWebClient.fetch(EXAMPLE_URL)).thenThrow(new IOException("Network error"));
+
+        // Access the private crawl method via reflection
+        Method crawlMethod = crawler.getClass().getDeclaredMethod("crawl", String.class);
+        crawlMethod.setAccessible(true);
+
+        // Invoke the crawl method and expect it to handle IOException internally
+        crawlMethod.invoke(crawler, EXAMPLE_URL);
+
+        assertEquals(1, crawler.getUrlCache().size());
+        assertTrue(crawler.getUrlCache().contains("https://example.com"));
+        assertFalse(crawler.getUrlCache().contains("https://example.com/page2"));
     }
 }
