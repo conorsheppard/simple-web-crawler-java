@@ -34,6 +34,19 @@ services:
     depends_on:
       - redis-web-crawler
 
+  crawler:
+    build: .
+    container_name: simple-web-crawler-java
+    entrypoint: ["/bin/sh", "-c", "./crawl.sh"]
+    depends_on:
+      - kafka-web-crawler
+      - redis-web-crawler
+    networks:
+      - crawler-network
+    stdin_open: true
+    tty: true
+    restart: "no"
+
 networks:
   crawler-network:
     driver: bridge

@@ -6,7 +6,7 @@ clean:
 	mvn clean
 
 build: clean
-	mvn clean package -Dorg.jline.terminal.dumb=true
+	mvn clean package
 
 install: clean
 	mvn install -U
@@ -31,6 +31,11 @@ docker-build:
 
 docker-run:
 	docker run -it --rm simple-web-crawler-java http://quotes.toscrape.com
+
+docker-rm-build-run-local:
+	docker rmi $$(docker images | grep simple-web-crawler-java | awk '{print $3}') -f \
+	&& docker build -t simple-web-crawler-java -f Dockerfile.dev . \
+	&& ./crawl https://books.toscrape.com
 
 run-jar:
 	java -jar simple-web-crawler-java.jar http://quotes.toscrape.com

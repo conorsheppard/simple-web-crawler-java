@@ -1,24 +1,28 @@
 #!/bin/zsh
 
 PROJECT_NAME="simple-web-crawler-java"
-JAR_FILE="target/${PROJECT_NAME}-1.0-SNAPSHOT.jar"
+IMAGE_NAME="conorsheppard/simple-web-crawler-java:latest"
 
-# Check if Maven build is needed
-if [[ ! -f "$JAR_FILE" ]]; then
-    echo "📦 Building project with Maven..."
-    mvn clean package || { echo "❌ Build failed!"; exit 1; }
+# Check for --dist or --distributed argument
+START_CONTAINERS=false
+for arg in "$@"; do
+    if [[ "$arg" == "--d" || "$arg" == "--dist" || "$arg" == "--distributed" ]]; then
+        START_CONTAINERS=true
+        break
+    fi
+done
+
+# If --dist or --distributed is supplied, manage containers
+if [[ "$START_CONTAINERS" == true ]]; then
+    # Check if Kafka container is running and remove it
+    if docker ps -q -f name=kafka-web-crawler; then
+        echo "🛑 Kafka container is running. Stopping and removing it..."
+        docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
+    fi
+
+    # Start fresh Kafka and Redis containers with Docker Compose
+    echo "🚀 Starting Kafka and Redis containers..."
+    docker-compose up -d || { echo "❌ Docker Compose up failed!"; exit 1; }
 fi
 
-# Check if Kafka container is running and remove it
-if docker ps -q -f name=kafka-web-crawler; then
-    echo "🛑 Kafka container is running. Stopping and removing it..."
-    docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
-fi
-
-# Start fresh Kafka and Redis containers with Docker Compose
-echo "🚀 Starting Kafka and Redis containers..."
-docker-compose up -d || { echo "❌ Docker Compose up failed!"; exit 1; }
-
-# Run the crawler with the provided arguments
-echo "🚀 Running the crawler..."
-java -jar "$JAR_FILE" "$@"
+docker run -e org.jline.terminal.dumb=true --rm "$IMAGE_NAME" "$@"

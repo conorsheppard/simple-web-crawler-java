@@ -1,0 +1,5 @@
+FROM eclipse-temurin:23-jdk AS builder
+WORKDIR /app
+COPY target/simple-web-crawler-java-1.0-SNAPSHOT.jar /app/crawler.jar
+ENTRYPOINT ["java", "-jar", "crawler.jar"]
+EXPOSE 8080

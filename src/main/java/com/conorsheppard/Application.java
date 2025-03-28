@@ -47,7 +47,7 @@ public class Application implements Callable<Integer> {
         UrlQueue queue = getQueue();
         UrlCache cache = getCache();
         SimpleWebCrawler crawler = new SimpleWebCrawler(baseURL, queue, cache, Executors.newFixedThreadPool(maxThreads),
-                TerminalBuilder.terminal(), new JSoupWebClient());
+                TerminalBuilder.builder().dumb(true).build(), new JSoupWebClient());
         logCrawlerInfo();
         crawler.crawl();
         return 0;
