@@ -9,4 +9,16 @@ if [[ ! -f "$JAR_FILE" ]]; then
     mvn clean package || { echo "❌ Build failed!"; exit 1; }
 fi
 
+# Check if Kafka container is running and remove it
+if docker ps -q -f name=kafka-web-crawler; then
+    echo "🛑 Kafka container is running. Stopping and removing it..."
+    docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
+fi
+
+# Start fresh Kafka and Redis containers with Docker Compose
+echo "🚀 Starting Kafka and Redis containers..."
+docker-compose up -d || { echo "❌ Docker Compose up failed!"; exit 1; }
+
+# Run the crawler with the provided arguments
+echo "🚀 Running the crawler..."
 java -jar "$JAR_FILE" "$@"

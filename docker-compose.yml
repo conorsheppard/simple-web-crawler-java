@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  redis-web-crawler:
+    image: redis:latest
+    container_name: redis-web-crawler
+    ports:
+      - "6379:6379"
+    networks:
+      - crawler-network
+
+  kafka-web-crawler:
+    image: apache/kafka:4.0.0
+    container_name: kafka-web-crawler
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-web-crawler:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-web-crawler:9094
+      KAFKA_CONTROLLER_QUORUM_BOOTSTRAP_SERVERS: CONTROLLER://kafka-web-crawler:9094
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_CONFLUENT_SUPPORT_METRICS_ENABLE: "false"
+
+    ports:
+      - "9093:9093"  # Broker port
+      - "9094:9094"  # Controller port
+    networks:
+      - crawler-network
+    volumes:
+      - ./kafka/data:/var/lib/kafka/data
+    depends_on:
+      - redis-web-crawler
+
+networks:
+  crawler-network:
+    driver: bridge

@@ -6,13 +6,19 @@ clean:
 	mvn clean
 
 build: clean
-	mvn clean package
+	mvn clean package -Dorg.jline.terminal.dumb=true
 
 install: clean
 	mvn install -U
 
 test:
 	mvn test
+
+up:
+	docker compose up
+
+down:
+	docker compose down -v
 
 build-native:
 	docker build -f Dockerfile.native -t simple-web-crawler-java-native .

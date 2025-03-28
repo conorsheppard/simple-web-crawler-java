@@ -30,11 +30,11 @@ public class Application implements Callable<Integer> {
     @Parameters(index = "0", description = "The website URL to crawl.", arity = "0..1")
     private String baseURL;
 
-    @Option(names = {"-q", "--queue"}, description = "Queue type (concurrentQueue, kafka)", defaultValue = "concurrentQueue")
-    private String queueType;
+    @Option(names = {"-c", "--concurrent"}, description = "Uses an in-memory queue and cache", defaultValue = "true")
+    private boolean isConcurrent;
 
-    @Option(names = {"-c", "--cache"}, description = "Cache type (inMemory, redis)", defaultValue = "inMemory")
-    private String cacheType;
+    @Option(names = {"-d", "--dist", "--distributed"}, description = "Uses Kafka & Redis for distributed crawling", defaultValue = "false")
+    private boolean isDistributed;
 
     @Option(names = {"-t", "--threads"}, description = "Max number of threads", defaultValue = "30")
     private int maxThreads;
@@ -71,11 +71,11 @@ public class Application implements Callable<Integer> {
     }
 
     private UrlQueue getQueue() {
-        return isKafka() ? new KafkaQueue() : new ConcurrentQueue();
+        return isDistributed ? new KafkaQueue() : new ConcurrentQueue();
     }
 
     private UrlCache getCache() {
-        return isRedis() ? new RedisUrlCache(RedisClient.create("redis://localhost:6379").connect())
+        return isDistributed ? new RedisUrlCache(RedisClient.create("redis://localhost:6379").connect())
                 : new InMemoryUrlCache();
     }
 
@@ -89,17 +89,9 @@ public class Application implements Callable<Integer> {
                         ⚡ Threads: {}
                         """,
                 baseURL,
-                isKafka() ? "kafka" : "concurrentQueue",
-                isRedis() ? "redis" : "inMemory",
+                isDistributed ? "kafka" : "concurrentQueue",
+                isDistributed ? "redis" : "inMemory",
                 maxThreads);
 
-    }
-
-    private boolean isKafka() {
-        return "kafka".equalsIgnoreCase(queueType);
-    }
-
-    private boolean isRedis() {
-        return "redis".equalsIgnoreCase(cacheType);
     }
 }
