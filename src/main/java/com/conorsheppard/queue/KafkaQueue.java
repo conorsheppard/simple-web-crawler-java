@@ -2,16 +2,23 @@ package com.conorsheppard.queue;
 
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.TopicPartition;
 
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import static com.conorsheppard.config.KafkaConfig.*;
 
+@Slf4j
 @Data
 public class KafkaQueue implements UrlQueue {
     public static final String TOPIC = "web-crawler-urls";
@@ -24,7 +31,13 @@ public class KafkaQueue implements UrlQueue {
         Properties consumerProps = loadKafkaConsumerProperties();
         producer = new KafkaProducer<>(producerProps);
         consumer = new KafkaConsumer<>(consumerProps);
-        consumer.subscribe(Collections.singleton(TOPIC));
+//        consumer.subscribe(Collections.singleton(TOPIC));
+        consumer.assign(Collections.singleton(new TopicPartition("web-crawler-urls", 0)));
+        // Poll once to allow the consumer to fetch the partition assignments
+        consumer.poll(Duration.ofMillis(100));
+        // Check if partitions are assigned
+        Set<TopicPartition> partitions = consumer.assignment();
+        log.debug("Partitions: {}", partitions);
     }
 
     @Override

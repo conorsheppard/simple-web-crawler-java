@@ -6,7 +6,7 @@ clean:
 	mvn clean
 
 build: clean
-	mvn clean package
+	mvn package
 
 install: clean
 	mvn install -U
