@@ -15,10 +15,10 @@ test:
 	mvn test
 
 up:
-	docker compose up
+	./create-consumer-offsets.sh & && docker compose up
 
 down:
-	docker compose down -v
+	docker compose down -v && rm -rf kafka/data/
 
 build-native:
 	docker build -f Dockerfile.native -t simple-web-crawler-java-native .

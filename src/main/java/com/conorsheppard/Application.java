@@ -42,6 +42,8 @@ public class Application implements Callable<Integer> {
     @SneakyThrows
     @Override
     public Integer call() {
+        log.debug("baseURL: {}", baseURL);
+        log.debug("isDistributed: {}", isDistributed);
         getBaseURL();
         if (baseURL.isEmpty()) return 1;
         UrlQueue queue = getQueue();
@@ -75,7 +77,9 @@ public class Application implements Callable<Integer> {
     }
 
     private UrlCache getCache() {
-        return isDistributed ? new RedisUrlCache(RedisClient.create("redis://localhost:6379").connect())
+        String redisUri = System.getenv().getOrDefault("ENVIRONMENT", "prod").equals("dev")
+                ? "redis://localhost:6379" : "redis://redis-web-crawler:6379";
+        return isDistributed ? new RedisUrlCache(RedisClient.create(redisUri).connect())
                 : new InMemoryUrlCache();
     }
 

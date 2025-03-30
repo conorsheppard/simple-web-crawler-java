@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,7 +48,10 @@ public class SimpleWebCrawler {
         while (!urlQueue.isEmpty() || activeCrawlers.get() > 0) {
             if (!urlQueue.isEmpty()) {
                 String url = urlQueue.dequeue();
-                submitCrawl(url);
+                if (url != null) {
+                    log.debug("submitting URL: {}", url);
+                    submitCrawl(url);
+                }
             }
         }
         shutdownAndAwait();

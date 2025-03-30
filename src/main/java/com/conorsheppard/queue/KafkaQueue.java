@@ -10,7 +10,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 
-import static com.conorsheppard.config.KafkaConfig.loadKafkaProperties;
+import static com.conorsheppard.config.KafkaConfig.*;
 
 @Data
 public class KafkaQueue implements UrlQueue {
@@ -20,8 +20,8 @@ public class KafkaQueue implements UrlQueue {
 
     @SneakyThrows
     public KafkaQueue() {
-        Properties producerProps = loadKafkaProperties("kafka-producer.properties");
-        Properties consumerProps = loadKafkaProperties("kafka-consumer.properties");
+        Properties producerProps = loadKafkaProducerProperties();
+        Properties consumerProps = loadKafkaConsumerProperties();
         producer = new KafkaProducer<>(producerProps);
         consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Collections.singleton(TOPIC));

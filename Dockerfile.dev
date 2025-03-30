@@ -1,5 +1,7 @@
 FROM eclipse-temurin:23-jdk AS builder
+ENV ENVIRONMENT=prod
 WORKDIR /app
-COPY target/simple-web-crawler-java-1.0-SNAPSHOT.jar /app/crawler.jar
-ENTRYPOINT ["java", "-jar", "crawler.jar"]
+COPY target/simple-web-crawler-java-1.0-SNAPSHOT.jar /app/simple-web-crawler-java.jar
+#ENTRYPOINT ["java", "-jar", "simple-web-crawler-java.jar"]
+#ENTRYPOINT ["sh", "-c", "java -jar simple-web-crawler-java.jar $CRAWLER_ARGS"]
 EXPOSE 8080

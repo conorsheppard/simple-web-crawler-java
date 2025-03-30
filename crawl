@@ -3,7 +3,6 @@
 PROJECT_NAME="simple-web-crawler-java"
 IMAGE_NAME="conorsheppard/simple-web-crawler-java:latest"
 
-# Check for --dist or --distributed argument
 START_CONTAINERS=false
 for arg in "$@"; do
     if [[ "$arg" == "--d" || "$arg" == "--dist" || "$arg" == "--distributed" ]]; then
@@ -12,17 +11,20 @@ for arg in "$@"; do
     fi
 done
 
-# If --dist or --distributed is supplied, manage containers
 if [[ "$START_CONTAINERS" == true ]]; then
-    # Check if Kafka container is running and remove it
     if docker ps -q -f name=kafka-web-crawler; then
         echo "🛑 Kafka container is running. Stopping and removing it..."
         docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
     fi
 
-    # Start fresh Kafka and Redis containers with Docker Compose
-    echo "🚀 Starting Kafka and Redis containers..."
-    docker-compose up -d || { echo "❌ Docker Compose up failed!"; exit 1; }
-fi
+    if docker ps -q -f name=redis-web-crawler; then
+        echo "🛑 Redis container is running. Stopping and removing it..."
+        docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
+    fi
 
-docker run -e org.jline.terminal.dumb=true --rm "$IMAGE_NAME" "$@"
+    export CRAWLER_ARGS="$@"
+    docker-compose up || { echo "❌ Docker Compose up failed!"; exit 1; }
+else
+    # Run the crawler container without starting Kafka and Redis
+    docker run --rm "$IMAGE_NAME" "$@" || { echo "❌ Docker run failed!"; exit 1; }
+fi
