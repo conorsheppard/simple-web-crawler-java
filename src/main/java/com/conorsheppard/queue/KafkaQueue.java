@@ -55,7 +55,6 @@ public class KafkaQueue implements UrlQueue {
             log.debug("dequeued URL: {}", val);
             return val;
         }
-//        return records.isEmpty() ? null : records.iterator().next().value();
     }
 
     @Override
@@ -66,15 +65,10 @@ public class KafkaQueue implements UrlQueue {
     @Override
     public int size() {
         TopicPartition partition0 = new TopicPartition(TOPIC, 0);
-        Map<TopicPartition, Long> endOffsets = consumer.endOffsets(Collections.singletonList(partition0));
+        Map<TopicPartition, Long> endOffsets = this.getConsumer().endOffsets(Collections.singletonList(partition0));
         long currentOffset = this.getConsumer().position(partition0);
         long logEndOffset = endOffsets.get(partition0);
         long lag = logEndOffset - currentOffset;
         return (int) lag;
-    }
-
-    @Override
-    public boolean contains(String url) {
-        return false;
     }
 }

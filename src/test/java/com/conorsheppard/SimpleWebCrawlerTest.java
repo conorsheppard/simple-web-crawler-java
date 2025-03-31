@@ -49,7 +49,7 @@ class SimpleWebCrawlerTest {
     @Test
     void testConstructor() {
         assertEquals("example.com", crawler.getBaseDomain());
-        assertTrue(crawler.getUrlQueue().contains(EXAMPLE_URL));
+        assertFalse(crawler.getUrlQueue().isEmpty());
     }
 
     @Test

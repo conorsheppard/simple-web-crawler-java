@@ -5,5 +5,4 @@ public interface UrlQueue {
     String dequeue();
     boolean isEmpty();
     int size();
-    boolean contains(String url);
 }
