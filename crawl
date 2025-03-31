@@ -46,5 +46,5 @@ if [[ "$START_CONTAINERS" == true ]]; then
     docker-compose down 2>/dev/null && rm -rf kafka/data/
 else
     # Run the crawler container without starting Kafka and Redis
-    docker run -it --rm -e CRAWLER_ARGS="${ARGS}" "$IMAGE_NAME" || { echo "❌ Docker run failed!"; exit 1; }
+    docker run --name simple-web-crawler -it --rm -e CRAWLER_ARGS="${ARGS}" "$IMAGE_NAME" || { echo "❌ Docker run failed!"; exit 1; }
 fi
