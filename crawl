@@ -22,9 +22,14 @@ if [[ "$START_CONTAINERS" == true ]]; then
         docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
     fi
 
-    docker-compose up -d kafka-web-crawler redis-web-crawler \
-        && ARGS="https://books.toscrape.com --dist --threads 100" docker-compose up simple-web-crawler-java \
-        || { echo "❌ Docker Compose up failed!"; exit 1; }
+    ARGS="https://books.toscrape.com --dist --threads 100" docker-compose up -d &
+
+    while [[ -z $(docker-compose ps -q simple-web-crawler-java) || -z $(docker ps -q -f id=$(docker-compose ps -q simple-web-crawler-java)) ]]; do
+        echo "Waiting for simple-web-crawler-java container to start..."
+        sleep 2
+    done
+
+    docker attach $(docker-compose ps -q simple-web-crawler-java)
 else
     # Run the crawler container without starting Kafka and Redis
     echo "$@"
