@@ -40,12 +40,11 @@ if [[ "$START_CONTAINERS" == true ]]; then
     echo "Waiting for Kafka, Redis & Web Crawler containers to start..."
     while [[ -z $(docker-compose ps -q simple-web-crawler-java) || -z $(docker ps -q -f id=$(docker-compose ps -q simple-web-crawler-java)) ]]; do
         spinner $!
-        # sleep 1
     done
     
     docker attach $(docker-compose ps -q simple-web-crawler-java)
     docker-compose down 2>/dev/null && rm -rf kafka/data/
 else
     # Run the crawler container without starting Kafka and Redis
-    docker run --rm -e CRAWLER_ARGS="${ARGS}" "$IMAGE_NAME" || { echo "❌ Docker run failed!"; exit 1; }
+    docker run -it --rm -e CRAWLER_ARGS="${ARGS}" "$IMAGE_NAME" || { echo "❌ Docker run failed!"; exit 1; }
 fi

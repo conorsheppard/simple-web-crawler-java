@@ -96,7 +96,6 @@ public class SimpleWebCrawler {
     @SneakyThrows
     void writeProgress() {
         while (!executor.isShutdown()) {
-            Thread.sleep(500); // Refresh every 500ms
             int scraped = visitedUrlSet.size();
             int discovered = urlCache.size();
             int percentage = (discovered == 0) ? 0 : (scraped * 100) / discovered;
@@ -104,6 +103,7 @@ public class SimpleWebCrawler {
             terminal.writer().printf("\r🌍 Crawling: [%s] %d%% (%d/%d URLs)",
                     progressBar(percentage), percentage, scraped, discovered);
             terminal.flush();
+            Thread.sleep(500); // Refresh every 500ms
         }
     }
 
