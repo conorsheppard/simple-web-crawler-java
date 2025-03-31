@@ -32,7 +32,7 @@ public class KafkaQueue implements UrlQueue {
         producer = new KafkaProducer<>(producerProps);
         consumer = new KafkaConsumer<>(consumerProps);
 //        consumer.subscribe(Collections.singleton(TOPIC));
-        consumer.assign(Collections.singleton(new TopicPartition("web-crawler-urls", 0)));
+        consumer.assign(Collections.singleton(new TopicPartition(TOPIC, 0)));
         // Poll once to allow the consumer to fetch the partition assignments
         consumer.poll(Duration.ofMillis(100));
         // Check if partitions are assigned
@@ -47,8 +47,17 @@ public class KafkaQueue implements UrlQueue {
 
     @Override
     public String dequeue() {
-        var records = this.getConsumer().poll(Duration.ofMillis(100));
-        return records.isEmpty() ? null : records.iterator().next().value();
+        var records = this.getConsumer().poll(Duration.ofMillis(500));
+        if (records.isEmpty()) {
+            log.debug("records is empty");
+            return null;
+        } else {
+            var val = records.iterator().next().value();
+            consumer.commitSync();
+            log.debug("dequeued URL: {}", val);
+            return val;
+        }
+//        return records.isEmpty() ? null : records.iterator().next().value();
     }
 
     @Override
