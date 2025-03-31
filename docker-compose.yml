@@ -58,9 +58,9 @@ services:
     stdin_open: true
     tty: true
     restart: "no"
-#    environment:
-#      - CRAWLER_ARGS=${CRAWLER_ARGS}
-    command: [ "$CRAWLER_ARGS" ]
+    environment:
+      - CRAWLER_ARGS=${ARGS}
+#    command: [ "$CRAWLER_ARGS" ]
 
 networks:
   crawler-network:

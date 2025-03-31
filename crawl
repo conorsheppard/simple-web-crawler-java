@@ -1,6 +1,5 @@
 #!/bin/zsh
 
-PROJECT_NAME="simple-web-crawler-java"
 IMAGE_NAME="conorsheppard/simple-web-crawler-java:latest"
 
 START_CONTAINERS=false
@@ -22,9 +21,10 @@ if [[ "$START_CONTAINERS" == true ]]; then
         docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
     fi
 
-    export CRAWLER_ARGS="$@"
-    docker-compose up || { echo "❌ Docker Compose up failed!"; exit 1; }
+    ARGS="https://books.toscrape.com --threads 100" docker-compose up || { echo "❌ Docker Compose up failed!"; exit 1; }
 else
     # Run the crawler container without starting Kafka and Redis
-    docker run --rm "$IMAGE_NAME" "$@" || { echo "❌ Docker run failed!"; exit 1; }
+    echo "$@"
+    export CRAWLER_ARGS="$@"
+    docker run --rm "$IMAGE_NAME" "$CRAWLER_ARGS" || { echo "❌ Docker run failed!"; exit 1; }
 fi
