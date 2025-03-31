@@ -26,12 +26,16 @@ run the application.
 
 _**Disclaimer:** This crawler is not fully distributed but rather a first step towards making it fully distributed.
 By extracting the queue out into a Kafka instance and the cache into a Redis instance, we loosely couple the queue and
-cache and make them available to other worker nodes.  
+cache from the crawler and make them available to other worker nodes.  
 So even though we don't currently have any other worker nodes, and some parts of the system are still very much
 purpose-built for one machine, we are well on our way to a modular web crawler that can be run on one machine or in a
 cluster or swarm of crawler containers on Kubernetes (or your choice of container orchestration platform).  
 Each crawler in the distributed cluster could also be utilising concurrency across hundreds of threads to process links,
 therefore we combine the power of concurrency and distribution ⚡️._
+
+```shell
+./crawl https://monzo.com --dist
+```
 
 ## 📝 Improvements
 - The JSoup framework creates a large number of TCP connections, one for every URL. 
