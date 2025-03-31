@@ -58,12 +58,9 @@ services:
     stdin_open: true
     tty: true
     restart: "no"
-    environment:
-      - CRAWLER_ARGS=${CRAWLER_ARGS}
+#    environment:
+#      - CRAWLER_ARGS=${CRAWLER_ARGS}
     command: [ "$CRAWLER_ARGS" ]
-#    command: ["sh", "-c", "java -jar simple-web-crawler-java.jar; tail -f /dev/null"] # keeps the container alive
-#    command: ["sh", "-c", "tail -f /dev/null"] # keeps the container alive
-#    command: ["sh", "-c", "java -jar simple-web-crawler-java.jar", "$CRAWLER_ARGS"] # keeps the container alive
 
 networks:
   crawler-network:
