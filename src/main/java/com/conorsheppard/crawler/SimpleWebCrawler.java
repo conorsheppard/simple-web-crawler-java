@@ -47,7 +47,10 @@ public class SimpleWebCrawler {
         while (!urlQueue.isEmpty() || activeCrawlers.get() > 0) {
             if (!urlQueue.isEmpty()) {
                 String url = urlQueue.dequeue();
-                submitCrawl(url);
+                if (url != null) {
+                    log.debug("submitting URL: {}", url);
+                    submitCrawl(url);
+                }
             }
         }
         shutdownAndAwait();

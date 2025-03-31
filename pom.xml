@@ -87,7 +87,7 @@
             <version>4.7.6</version>
         </dependency>
         <dependency>
-                <groupId>org.jline</groupId>
+            <groupId>org.jline</groupId>
             <artifactId>jline</artifactId>
             <version>3.29.0</version>
         </dependency>
@@ -235,6 +235,16 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <environmentVariables>
+                        <ENVIRONMENT>dev</ENVIRONMENT>
+                    </environmentVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>

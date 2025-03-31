@@ -45,11 +45,13 @@
         <appender-ref ref="FILE"/>  <!-- Logs DEBUG and above to file -->
         <appender-ref ref="CONSOLE"/>  <!-- Logs INFO and above to console -->
     </logger>
-    
+
     <logger name="com.conorsheppard.Application" level="INFO" additivity="false">
         <appender-ref ref="FILE"/>  <!-- Logs INFO and above to file -->
         <appender-ref ref="CONSOLE"/>  <!-- Logs INFO and above to console -->
     </logger>
+
+    <logger name="org.apache" level="ERROR" />
 
     <root level="ERROR">
         <appender-ref ref="FILE"/>

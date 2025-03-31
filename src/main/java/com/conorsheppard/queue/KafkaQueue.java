@@ -2,16 +2,20 @@ package com.conorsheppard.queue;
 
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 
-import static com.conorsheppard.config.KafkaConfig.loadKafkaProperties;
+import static com.conorsheppard.config.KafkaConfig.*;
 
+@Slf4j
 @Data
 public class KafkaQueue implements UrlQueue {
     public static final String TOPIC = "web-crawler-urls";
@@ -20,11 +24,13 @@ public class KafkaQueue implements UrlQueue {
 
     @SneakyThrows
     public KafkaQueue() {
-        Properties producerProps = loadKafkaProperties("kafka-producer.properties");
-        Properties consumerProps = loadKafkaProperties("kafka-consumer.properties");
+        Properties producerProps = loadKafkaProducerProperties();
+        Properties consumerProps = loadKafkaConsumerProperties();
         producer = new KafkaProducer<>(producerProps);
         consumer = new KafkaConsumer<>(consumerProps);
-        consumer.subscribe(Collections.singleton(TOPIC));
+        consumer.assign(Collections.singleton(new TopicPartition(TOPIC, 0)));
+        // Poll once to allow the consumer to fetch the partition assignments
+        consumer.poll(Duration.ofMillis(100));
     }
 
     @Override
@@ -34,24 +40,28 @@ public class KafkaQueue implements UrlQueue {
 
     @Override
     public String dequeue() {
-        var records = this.getConsumer().poll(Duration.ofMillis(100));
-        return records.isEmpty() ? null : records.iterator().next().value();
+        var records = this.getConsumer().poll(Duration.ofMillis(500));
+        if (records.isEmpty()) {
+            return null;
+        } else {
+            var val = records.iterator().next().value();
+            consumer.commitSync();
+            return val;
+        }
     }
 
     @Override
     public boolean isEmpty() {
-        // Kafka is always "ready" to fetch
-        return false;
+        return size() == 0;
     }
 
     @Override
     public int size() {
-        // Kafka does not expose queue size directly
-        return -1;
-    }
-
-    @Override
-    public boolean contains(String url) {
-        return false;
+        TopicPartition partition0 = new TopicPartition(TOPIC, 0);
+        Map<TopicPartition, Long> endOffsets = this.getConsumer().endOffsets(Collections.singletonList(partition0));
+        long currentOffset = this.getConsumer().position(partition0);
+        long logEndOffset = endOffsets.get(partition0);
+        long lag = logEndOffset - currentOffset;
+        return (int) lag;
     }
 }

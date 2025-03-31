@@ -32,10 +32,8 @@ class KafkaPropertiesTest {
     @Test
     void testKafkaQueueConstructorLoadsProperties() {
         try (MockedStatic<KafkaConfig> mockedKafkaConfig = Mockito.mockStatic(KafkaConfig.class)) {
-            mockedKafkaConfig.when(() -> KafkaConfig.loadKafkaProperties("kafka-producer.properties"))
-                    .thenReturn(mockProducerProps);
-            mockedKafkaConfig.when(() -> KafkaConfig.loadKafkaProperties("kafka-consumer.properties"))
-                    .thenReturn(mockConsumerProps);
+            mockedKafkaConfig.when(KafkaConfig::loadKafkaProducerProperties).thenReturn(mockProducerProps);
+            mockedKafkaConfig.when(KafkaConfig::loadKafkaConsumerProperties).thenReturn(mockConsumerProps);
             KafkaQueue kafkaQueue = new KafkaQueue();
             assertNotNull(kafkaQueue.getProducer());
             assertNotNull(kafkaQueue.getConsumer());

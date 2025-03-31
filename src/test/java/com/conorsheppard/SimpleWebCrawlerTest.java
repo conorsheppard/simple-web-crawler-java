@@ -43,13 +43,13 @@ class SimpleWebCrawlerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         crawler = new SimpleWebCrawler(EXAMPLE_URL, new ConcurrentQueue(), new InMemoryUrlCache(),
-                Executors.newSingleThreadExecutor(), TerminalBuilder.terminal(), mockWebClient);
+                Executors.newSingleThreadExecutor(), TerminalBuilder.builder().dumb(true).build(), mockWebClient);
     }
 
     @Test
     void testConstructor() {
         assertEquals("example.com", crawler.getBaseDomain());
-        assertTrue(crawler.getUrlQueue().contains(EXAMPLE_URL));
+        assertFalse(crawler.getUrlQueue().isEmpty());
     }
 
     @Test

@@ -25,9 +25,4 @@ public class ConcurrentQueue implements UrlQueue {
     public int size() {
         return queue.size();
     }
-
-    @Override
-    public boolean contains(String url) {
-        return queue.contains(url);
-    }
 }
