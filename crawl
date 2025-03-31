@@ -1,8 +1,23 @@
 #!/bin/zsh
 
+spinner() {
+    local pid=$1
+    local delay=0.1
+    local spin_chars=('|' '/' '-' '\')
+
+    while kill -0 "$pid" 2>/dev/null; do
+        for char in "${spin_chars[@]}"; do
+            echo -ne "\r$char"
+            sleep "$delay"
+        done
+    done
+    echo -ne "\r"
+}
+
+export COMPOSE_DISABLE_WARNINGS=1
 IMAGE_NAME="conorsheppard/simple-web-crawler-java:latest"
 ARGS="$*"
-echo "$ARGS"
+
 START_CONTAINERS=false
 for arg in "$@"; do
     if [[ "$arg" == "--d" || "$arg" == "--dist" || "$arg" == "--distributed" ]]; then
@@ -13,26 +28,24 @@ done
 
 if [[ "$START_CONTAINERS" == true ]]; then
     if docker ps -q -f name=kafka-web-crawler; then
-        echo "🛑 Kafka container is running. Stopping and removing it..."
-        docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
+        docker-compose down 2>/dev/null || { echo "❌ Docker Compose down failed!"; exit 1; }
     fi
 
     if docker ps -q -f name=redis-web-crawler; then
-        echo "🛑 Redis container is running. Stopping and removing it..."
-        docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
+        docker-compose down 2>/dev/null || { echo "❌ Docker Compose down failed!"; exit 1; }
     fi
 
-    ARGS="https://books.toscrape.com --dist --threads 100" docker-compose up -d &
+    ARGS="${ARGS}" docker-compose up -d &
 
+    echo "Waiting for Kafka, Redis & Web Crawler containers to start..."
     while [[ -z $(docker-compose ps -q simple-web-crawler-java) || -z $(docker ps -q -f id=$(docker-compose ps -q simple-web-crawler-java)) ]]; do
-        echo "Waiting for simple-web-crawler-java container to start..."
-        sleep 2
+        spinner $!
+        # sleep 1
     done
-
+    
     docker attach $(docker-compose ps -q simple-web-crawler-java)
+    docker-compose down 2>/dev/null && rm -rf kafka/data/
 else
     # Run the crawler container without starting Kafka and Redis
-    echo "$@"
-    export CRAWLER_ARGS="$@"
-    docker run --rm "$IMAGE_NAME" "$CRAWLER_ARGS" || { echo "❌ Docker run failed!"; exit 1; }
+    docker run --rm -e CRAWLER_ARGS="${ARGS}" "$IMAGE_NAME" || { echo "❌ Docker run failed!"; exit 1; }
 fi

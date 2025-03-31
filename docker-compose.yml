@@ -42,7 +42,6 @@ services:
       timeout: 5s
       retries: 20
       start_period: 1s
-#    command: [ "/bin/sh", "-c", "kafka-server-start.sh config/kraft/server.properties >/dev/null 2>&1" ]
 
   simple-web-crawler-java:
     image: conorsheppard/simple-web-crawler-java:latest
@@ -54,12 +53,11 @@ services:
         condition: service_started
     networks:
       - crawler-network
-#    stdin_open: true
-#    tty: true
+    stdin_open: true
+    tty: true
     restart: "no"
     environment:
       - CRAWLER_ARGS=${ARGS}
-#    command: [ "$CRAWLER_ARGS" ]
 
 networks:
   crawler-network:
