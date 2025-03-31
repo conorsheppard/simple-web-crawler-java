@@ -14,7 +14,6 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,7 +25,7 @@ public class SimpleWebCrawler {
     private final UrlQueue urlQueue;
     private final UrlCache urlCache;
     private final Set<String> visitedUrlSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private static final AtomicInteger activeCrawlers = new AtomicInteger(-1);
+    private static final AtomicInteger activeCrawlers = new AtomicInteger(0);
     private final String baseDomain;
     private final Terminal terminal;
     private final WebClient webClient;
@@ -45,8 +44,6 @@ public class SimpleWebCrawler {
     }
 
     public void crawl() {
-        // if the queue still has elements or if there are still active crawlers, the queue could be empty but if there
-        // are still crawlers doing work, they could be about to push more URLs onto the queue
         while (!urlQueue.isEmpty() || activeCrawlers.get() > 0) {
             if (!urlQueue.isEmpty()) {
                 String url = urlQueue.dequeue();

@@ -3,18 +3,16 @@ package com.conorsheppard.queue;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.TopicPartition;
 
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 import static com.conorsheppard.config.KafkaConfig.*;
 
@@ -62,14 +60,17 @@ public class KafkaQueue implements UrlQueue {
 
     @Override
     public boolean isEmpty() {
-        // Kafka is always "ready" to fetch
-        return false;
+        return size() == 0;
     }
 
     @Override
     public int size() {
-        // Kafka does not expose queue size directly
-        return -1;
+        TopicPartition partition0 = new TopicPartition(TOPIC, 0);
+        Map<TopicPartition, Long> endOffsets = consumer.endOffsets(Collections.singletonList(partition0));
+        long currentOffset = this.getConsumer().position(partition0);
+        long logEndOffset = endOffsets.get(partition0);
+        long lag = logEndOffset - currentOffset;
+        return (int) lag;
     }
 
     @Override
