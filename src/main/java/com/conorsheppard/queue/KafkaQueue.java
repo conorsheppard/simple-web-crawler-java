@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import static com.conorsheppard.config.KafkaConfig.*;
 
@@ -29,13 +28,9 @@ public class KafkaQueue implements UrlQueue {
         Properties consumerProps = loadKafkaConsumerProperties();
         producer = new KafkaProducer<>(producerProps);
         consumer = new KafkaConsumer<>(consumerProps);
-//        consumer.subscribe(Collections.singleton(TOPIC));
         consumer.assign(Collections.singleton(new TopicPartition(TOPIC, 0)));
         // Poll once to allow the consumer to fetch the partition assignments
         consumer.poll(Duration.ofMillis(100));
-        // Check if partitions are assigned
-        Set<TopicPartition> partitions = consumer.assignment();
-        log.debug("Partitions: {}", partitions);
     }
 
     @Override
@@ -47,12 +42,10 @@ public class KafkaQueue implements UrlQueue {
     public String dequeue() {
         var records = this.getConsumer().poll(Duration.ofMillis(500));
         if (records.isEmpty()) {
-            log.debug("records is empty");
             return null;
         } else {
             var val = records.iterator().next().value();
             consumer.commitSync();
-            log.debug("dequeued URL: {}", val);
             return val;
         }
     }

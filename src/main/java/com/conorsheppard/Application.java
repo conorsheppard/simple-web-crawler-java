@@ -42,8 +42,6 @@ public class Application implements Callable<Integer> {
     @SneakyThrows
     @Override
     public Integer call() {
-        log.debug("baseURL: {}", baseURL);
-        log.debug("isDistributed: {}", isDistributed);
         getBaseURL();
         if (baseURL.isEmpty()) return 1;
         UrlQueue queue = getQueue();
