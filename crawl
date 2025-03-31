@@ -22,7 +22,9 @@ if [[ "$START_CONTAINERS" == true ]]; then
         docker-compose down || { echo "❌ Docker Compose down failed!"; exit 1; }
     fi
 
-    ARGS="$ARGS" docker-compose up || { echo "❌ Docker Compose up failed!"; exit 1; }
+    docker-compose up -d kafka-web-crawler redis-web-crawler \
+        && ARGS="https://books.toscrape.com --dist --threads 100" docker-compose up simple-web-crawler-java \
+        || { echo "❌ Docker Compose up failed!"; exit 1; }
 else
     # Run the crawler container without starting Kafka and Redis
     echo "$@"

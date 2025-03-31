@@ -38,10 +38,10 @@ services:
         condition: service_started
     healthcheck:
       test: [ "CMD", "/opt/kafka/bin/kafka-topics.sh", "--list", "--bootstrap-server", "kafka-web-crawler:9092" ]
-      interval: 10s
+      interval: 1s
       timeout: 5s
-      retries: 5
-      start_period: 10s
+      retries: 20
+      start_period: 1s
 #    command: [ "/bin/sh", "-c", "kafka-server-start.sh config/kraft/server.properties >/dev/null 2>&1" ]
 
   simple-web-crawler-java:
@@ -54,8 +54,8 @@ services:
         condition: service_started
     networks:
       - crawler-network
-    stdin_open: true
-    tty: true
+#    stdin_open: true
+#    tty: true
     restart: "no"
     environment:
       - CRAWLER_ARGS=${ARGS}
