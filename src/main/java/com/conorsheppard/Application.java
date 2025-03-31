@@ -16,6 +16,8 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
@@ -50,12 +52,22 @@ public class Application implements Callable<Integer> {
                 TerminalBuilder.builder().dumb(true).build(), new JSoupWebClient());
         logCrawlerInfo();
         crawler.crawl();
+        askToPrintUrls(crawler);
         return 0;
     }
 
     public static void main(String[] args) {
         int exitCode = new CommandLine(new Application()).execute(args);
         System.exit(exitCode);
+    }
+
+    private void askToPrintUrls(SimpleWebCrawler crawler) {
+        Scanner scanner = new Scanner(System.in);
+        log.info("Do you want to see all the URLs? (Y/n): ");
+        String input = scanner.nextLine().trim().toLowerCase();
+        if (input.isEmpty() || input.equals("y")) {
+            new ArrayList<>(crawler.getVisitedUrlSet()).reversed().forEach(url -> log.info("{}", url));
+        }
     }
 
     private void getBaseURL() {
