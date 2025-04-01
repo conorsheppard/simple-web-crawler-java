@@ -20,7 +20,7 @@ ARGS="$*"
 
 START_CONTAINERS=false
 for arg in "$@"; do
-    if [[ "$arg" == "--d" || "$arg" == "--dist" || "$arg" == "--distributed" ]]; then
+    if [[ "$arg" == "-d" || "$arg" == "--dist" || "$arg" == "--distributed" ]]; then
         START_CONTAINERS=true
         break
     fi

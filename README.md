@@ -30,6 +30,21 @@ To specify the number of threads, use the `-t` or `--threads` flags
 ./crawl https://books.toscrape.com --threads 100
 ```
 
+Execute `./crawl -help` for more information on usage and command line arguments 
+
+```text
+Usage: WebCrawler [-cdhV] [-t=<maxThreads>] [<baseURL>]
+A simple web crawler with configurable queue and cache options.
+      [<baseURL>]    The website URL to crawl.
+  -c, --concurrent   Uses an in-memory queue and cache
+  -d, --dist, --distributed
+                     Uses Kafka & Redis for distributed crawling
+  -h, --help         Show this help message and exit.
+  -t, --threads=<maxThreads>
+                     Max number of threads
+  -V, --version      Print version information and exit.
+```
+
 ## 🌍 Distributed Crawler
 
 <details>
@@ -52,13 +67,15 @@ The crawl script will handle starting up Redis and Kafka containers before execu
 ```
 
 Once the crawler is finished, it will ask for input to see if you'd like all the URLs printed to the console
-```shell
+
+```text
 [main] INFO  com.conorsheppard.Application - Do you want to see all the URLs? (Y/n):
 ```
 
 You can also view the URLs directly in Kafka if you've ran the crawler in distributed mode, you can do this while the
 application is waiting for input at the end of the crawl as the script will tear down all containers once the program exits.  
 Kafka will preserve the order in which the URLs were written.
+
 ```shell
 docker exec -it kafka-web-crawler /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka-web-crawler:9092 --topic web-crawler-urls --from-beginning
 ```
