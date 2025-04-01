@@ -21,7 +21,8 @@ It starts from a given URL, visits each page on the **same domain**, and prints 
 ```
 
 You can simply run the above script and supply the base URL as a command line argument, the script will then build and
-run the application.
+run the application.  
+Make sure that Docker and Docker Compose are install and that Docker is running.
 
 To specify the number of threads, use the `-t` or `--threads` flags
 
