@@ -30,6 +30,21 @@ To specify the number of threads, use the `-t` or `--threads` flags
 ./crawl https://books.toscrape.com --threads 100
 ```
 
+Execute `./crawl -help` for more information on usage and command line arguments 
+
+```text
+Usage: WebCrawler [-cdhV] [-t=<maxThreads>] [<baseURL>]
+A simple web crawler with configurable queue and cache options.
+      [<baseURL>]    The website URL to crawl.
+  -c, --concurrent   Uses an in-memory queue and cache
+  -d, --dist, --distributed
+                     Uses Kafka & Redis for distributed crawling
+  -h, --help         Show this help message and exit.
+  -t, --threads=<maxThreads>
+                     Max number of threads
+  -V, --version      Print version information and exit.
+```
+
 ## 🌍 Distributed Crawler
 
 <details>
@@ -52,7 +67,7 @@ The crawl script will handle starting up Redis and Kafka containers before execu
 ```
 
 Once the crawler is finished, it will ask for input to see if you'd like all the URLs printed to the console
-```shell
+```text
 [main] INFO  com.conorsheppard.Application - Do you want to see all the URLs? (Y/n):
 ```
 
