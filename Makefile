@@ -20,25 +20,8 @@ up:
 down:
 	docker compose down -v && rm -rf kafka/data/
 
-build-native:
-	docker build -f Dockerfile.native -t simple-web-crawler-java-native .
-
-run-native:
-	docker run -it --rm simple-web-crawler-java-native http://quotes.toscrape.com
-
 docker-build:
 	docker build -t simple-web-crawler-java .
-
-docker-run:
-	docker run -it --rm simple-web-crawler-java http://quotes.toscrape.com
-
-docker-rm-build-run-local:
-	docker rmi $$(docker images | grep simple-web-crawler-java | awk '{print $3}') -f \
-	&& docker build -t simple-web-crawler-java -f Dockerfile.dev . \
-	&& ./crawl https://books.toscrape.com
-
-run-jar:
-	java -jar simple-web-crawler-java.jar http://quotes.toscrape.com
 
 test-coverage:
 	./mvnw clean org.jacoco:jacoco-maven-plugin:0.8.12:prepare-agent verify org.jacoco:jacoco-maven-plugin:0.8.12:report
@@ -52,4 +35,4 @@ coverage-badge-gen:
 test-suite: test-coverage check-coverage coverage-badge-gen
 
 .SILENT:
-.PHONY: default clean build install test build-native run-native docker-build docker-run run-jar test-coverage check-coverage coverage-badge-gen test-suite
+.PHONY: default clean build install test up down docker-build test-coverage check-coverage coverage-badge-gen test-suite

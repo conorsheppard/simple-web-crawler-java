@@ -9,7 +9,7 @@ It starts from a given URL, visits each page on the **same domain**, and prints 
 - Crawls a website starting from a **base URL**
 - Only follows links on the **same subdomain**
 - Uses [JSoup](https://jsoup.org/) for HTML parsing
-- Runs as a **CLI tool** with a clean wrapper script
+- Runs as a **CLI tool** with a clean wrapper script (Docker and Docker Compose must be installed)
 - Can be optionally run in distributed mode with a Kafka queue and Redis cache
 
 ---
@@ -17,7 +17,7 @@ It starts from a given URL, visits each page on the **same domain**, and prints 
 ## 📦 Build and Run 🏃🏻
 
 ```shell
-./crawl https://monzo.com
+./crawl https://books.toscrape.com
 ```
 
 You can simply run the above script and supply the base URL as a command line argument, the script will then build and
@@ -26,7 +26,7 @@ run the application.
 To specify the number of threads, use the `-t` or `--threads` flags
 
 ```shell
-./crawl https://monzo.com --threads 100
+./crawl https://books.toscrape.com --threads 100
 ```
 
 ## 🌍 Distributed Crawler
@@ -44,7 +44,8 @@ Each crawler in the distributed cluster could also be utilising concurrency acro
 therefore we combine the power of concurrency and distribution ⚡️._
 </details>
 
-Use the `-d` or `--dist` flags to run with Redis & Kafka
+Use the `-d` or `--dist` flags to run with Redis & Kafka.
+The crawl script will handle starting up Redis and Kafka containers before executing the crawler.
 ```shell
 ./crawl https://monzo.com --dist --threads 100
 ```
@@ -52,7 +53,7 @@ Use the `-d` or `--dist` flags to run with Redis & Kafka
 ## 📝 Improvements
 - The JSoup framework creates a large number of TCP connections, one for every URL. 
 If HttpClient were explicitly used, it could cache connections for reuse and be more network efficient.
-- Implementation of politeness
+- Implementation of politeness (rate limiting, delay between requests)
 - Depth limit
 - Store the URLs scraped as a graph structure and persist in a graph database such as Neo4j, this could help with:
     - Visualising the website structure 

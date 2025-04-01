@@ -40,7 +40,7 @@ services:
       test: [ "CMD", "/opt/kafka/bin/kafka-topics.sh", "--list", "--bootstrap-server", "kafka-web-crawler:9092" ]
       interval: 1s
       timeout: 5s
-      retries: 20
+      retries: 10
       start_period: 1s
 
   simple-web-crawler-java:
