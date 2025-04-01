@@ -58,4 +58,6 @@ If HttpClient were explicitly used, it could cache connections for reuse and be 
     - Visualising the website structure 
     - Detecting loops & broken links
     - Finding the shortest path between two pages (Dijkstra, Bellman-Ford)
-- Retries for timeouts
+- Retries and back-off strategies for timeouts and failed requests
+- Accommodate robots.txt
+- Fully distributed, horizontally scalable crawler
