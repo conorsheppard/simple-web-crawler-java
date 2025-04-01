@@ -1,6 +1,6 @@
 # Simple Web Crawler 🕷️
 
-<img src="./badges/jacoco.svg" style="display: flex;" alt="jacoco-test-coverage-badge">
+![Coverage](./badges/jacoco.svg)
 
 A simple command-line web crawler built in **Java** using **JSoup**.  
 It starts from a given URL, visits each page on the **same domain**, and prints all discovered links.
@@ -22,7 +22,7 @@ It starts from a given URL, visits each page on the **same domain**, and prints 
 
 You can simply run the above script and supply the base URL as a command line argument, the script will then build and
 run the application.  
-Make sure that Docker and Docker Compose are install and that Docker is running.
+Make sure that Docker and Docker Compose are installed and that Docker is running.
 
 To specify the number of threads, use the `-t` or `--threads` flags
 
@@ -48,7 +48,7 @@ therefore we combine the power of concurrency and distribution ⚡️._
 Use the `-d` or `--dist` flags to run with Redis & Kafka.
 The crawl script will handle starting up Redis and Kafka containers before executing the crawler.
 ```shell
-./crawl https://monzo.com --dist --threads 100
+./crawl https://books.toscrape.com --dist --threads 100
 ```
 
 Once the crawler is finished, it will ask for input to see if you'd like all the URLs printed to the console
@@ -75,3 +75,4 @@ If HttpClient were explicitly used, it could cache connections for reuse and be 
 - Retries and back-off strategies for timeouts and failed requests
 - Accommodate robots.txt
 - Fully distributed, horizontally scalable crawler
+- Optionally display URLs as they are scraped
