@@ -47,9 +47,9 @@ public class Application implements Callable<Integer> {
         if (baseURL.isEmpty()) return 1;
         UrlQueue queue = getQueue();
         UrlCache cache = getCache();
+        logCrawlerInfo();
         SimpleWebCrawler crawler = new SimpleWebCrawler(baseURL, queue, cache, Executors.newFixedThreadPool(maxThreads),
                 TerminalBuilder.builder().dumb(true).build(), new JSoupWebClient());
-        logCrawlerInfo();
         crawler.crawl();
         askToPrintUrls(crawler);
         return 0;
