@@ -50,6 +50,18 @@ The crawl script will handle starting up Redis and Kafka containers before execu
 ./crawl https://monzo.com --dist --threads 100
 ```
 
+Once the crawler is finished, it will ask for input to see if you'd like all the URLs printed to the console
+```shell
+[main] INFO  com.conorsheppard.Application - Do you want to see all the URLs? (Y/n):
+```
+
+You can also view the URLs directly in Kafka if you've ran the crawler in distributed mode, you can do this while the
+application is waiting for input at the end of the crawl as the script will tear down all containers once the program exits.  
+Kafka will preserve the order in which the URLs were written.
+```shell
+docker exec -it kafka-web-crawler /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka-web-crawler:9092 --topic web-crawler-urls --from-beginning
+```
+
 ## 📝 Improvements
 - The JSoup framework creates a large number of TCP connections, one for every URL. 
 If HttpClient were explicitly used, it could cache connections for reuse and be more network efficient.
